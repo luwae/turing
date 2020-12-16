@@ -1,0 +1,12 @@
+#add one to given number.
+
+#move to the last digit and go to state a
+state s
+_: _ L a
+0:   R
+1:   R
+#if we read 1, write zero and carry on; else write 1 and stop.
+state a
+_: 1   end
+0: 1   end
+1: 0 L

@@ -74,3 +74,13 @@ constraints:
  
 map symbols for faster array access
 map states for faster array access
+
+-----LEXER-----
+state s         STATE NAME
+_: _ L a        SYMDEF SYM MOV NAME
+0:   R          SYMDEV MOV
+1:   R          SYMDEV MOV
+state a         STATE NAME
+_: 1   end      SYMDEF SYM NAME
+0: 1   end      SYMDEF SYM NAME
+1: 0 L          SYMDEF SYM MOV
