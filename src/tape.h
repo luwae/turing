@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define DYNARR_SIZE_MIN 8
+
 /* A resizable array containing 8 bit unsigned integers.
  */
 struct dynarr {

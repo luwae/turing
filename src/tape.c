@@ -4,21 +4,26 @@
 
 #include "tape.h"
 
-#define DYNARR_SIZE_MIN 8
-
-/* Grow dynamic array to a minimum indexing size.
- * The new size will be index+1 rounded up to the next power of 2.
+/* Resize dynamic array to fit current size.
+ * If current size is larger than current range, grow to fitting power of two.
+ * If current size is smaller or equal to 1/4 of current range, shrink.
+ * Array cannot get smaller than DYNARR_SIZE_MIN (see tape.h).
  * @param d self
- * @param index the index that should be accessible after resize
  */
-static void *dynarr_growto(struct dynarr *d, int index) {
-    int p = 1;
-
-    while (p <= index)
-        p <<= 1;
-
-    d->data = realloc(d->data, p);
-    d->range = p;
+static void dynarr_resize(struct dynarr *d) {
+    if (d->size > d->range) {
+        //grow
+        do {
+            d->range <<= 1;
+        } while (d->size > d->range);
+        d->data = realloc(d->data, d->range);
+    } else if (d->size <= d->range >> 2 && d->range > DYNARR_SIZE_MIN) {
+        //shrink
+        do {
+            d->range >>= 1;
+        } while (d->size <= d->range >> 2 && d->range > DYNARR_SIZE_MIN);
+        d->data = realloc(d->data, d->range);
+    }
 }
 
 /* Write data to a specified position in the array.
@@ -28,19 +33,28 @@ static void *dynarr_growto(struct dynarr *d, int index) {
  * @param index the position to write to
  */
 static void *dynarr_write(struct dynarr *d, uint8_t data, int index) {
-    if (index >= d->range)
-        dynarr_growto(d, index);
-
-    *(d->data + index) = data;
-
-    //update size
     if (data == 0) {
-        //blank, find last non blank
+        //no need to extend the array, since nothing important is written
+        //only write data if in range
+        if (index < d->range)
+            *(d->data + index) = data;
+        
+        //backtrack to last important index
         while (--index >= 0)
             if (*(d->data + index))
                 break;
+        
+        //possibly shrinking array if enough has been removed
+        d->size = index + 1;
+        dynarr_resize(d);
+    } else {
+        //possibly extend array
+        if (index + 1 > d->size)
+            d->size = index + 1;
+            dynarr_resize(d);
+            
+        *(d->data + index) = data;
     }
-    d->size = index + 1;
 }
 
 /* Create an empty tape on the heap.
