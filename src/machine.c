@@ -3,8 +3,10 @@
 #include <stdint.h>
 #include <string.h>
 
-#define STATETAB_SIZE(nsym, nstate) \
-    sizeof(struct command) * nstate * nsym
+#include <tape.h>
+
+#define STATETAB_SIZE(nsyms, nstates) \
+    sizeof(struct command) * nstates * nsyms
 
 struct command {
     uint8_t sym;
@@ -16,41 +18,70 @@ struct tmachine {
     int nsyms;
     int nstates;
     
-    uint8_t *sym2num;
-    char *num2sym;
     char **statenames;
     
+    uint8_t *sym2num;
+    char *num2sym;
+    
     struct command *statetab;
+    struct tape *mtape;
 };
 
-int main() {
-    unsigned char data[] = {
-        0x00, 0xFF, 0x01, 0x00, //state 0(s), symbol 0(_)
-        0x01, 0x01, 0x00, 0x00, //state 0(s), symbol 1(0)
-        0x02, 0x01, 0x00, 0x00, //state 0(s), symbol 2(1)
-        0x02, 0x00, 0xFF, 0xFF, //state 1(a), symbol 0(_)
-        0x02, 0x00, 0xFF, 0xFF, //state 1(a), symbol 1(0)
-        0x01, 0xFF, 0x01, 0x00  //state 1(a), symbol 2(1)
-        };
-    
-    uint8_t sym2num[128] = { //make this smaller?
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        };
+//--------------------
+int test_nsyms = 3;
+int test_nstates = 2;
+char *_test_statenames = "s\0a";
+char *test_statenames[2] = {&_test_statenames, &_test_statenames + 2};
+
+uint8_t test_sym2num[] = {
+    0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+    0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+    0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+    1   ,2   ,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+    0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+    0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0   ,
+    0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+    0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF
+};
+char *test_num2sym = "_01";
+uint8_t _test_statetab[] = {
+0x00, 0x00, 0x01, 0x00,
+0x01, 0x02, 0x00, 0x00,
+0x02, 0x02, 0x00, 0x00,
+0x02, 0x01, 0xFF, 0xFF,
+0x02, 0x01, 0xFF, 0xFF,
+0x01, 0x00, 0x01, 0x00
+};
+struct command *test_statetab = (struct command *) _test_statetab;
+char *test_start_string = "10011";
+//--------------------
+
+struct tmachine *tmachine_create(int nsyms, int nstates) {
+    struct tmachine *tm = malloc(sizeof(*tm));
+
+    tm->nsyms = nsyms;
+    tm->nstates = nstates;
+    tm->mtape = tape_create_empty();
         
-    char num2sym[3] = {
-        '_', '0', '1'
-        };
-    char *statenames[2] = {"s", "a"};
-    
-    struct tmachine tm;
-    tm.nsyms = 3;
-    tm.nstates = 2;
-    tm.sym2num = sym2num;
-    tm.num2sym = num2sym;
-    tm.statenames = statenames
-    tm.statetab = (struct command *) data;
+    return tm;
+}
+
+void tmachine_destroy(struct tmachine *tm) {
+    free(tm->statenames);
+    free(tm->statetab);
+    tape_destroy(tm->mtape);
+
+    free(tm);
+}
+
+int main() {
+    struct tmachine *tm = tmachine_create(test_nsyms, test_nstates);
+    tm->statenames = test_statenames;
+    tm->sym2num = test_sym2num;
+    tm->num2sym = test_num2sym;
+    tm->statetab = test_statetab;
+    tape_write_string(tm->mtape, test_start_string, test_sym2num);
+
+    tmachine_destroy(tm);
     return 0;
 }
