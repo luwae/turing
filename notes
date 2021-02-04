@@ -84,3 +84,6 @@ state a         STATE NAME
 _: 1   end      SYMDEF SYM NAME
 0: 1   end      SYMDEF SYM NAME
 1: 0 L          SYMDEF SYM MOV
+
+TODO:
+ - endless cycle detection
