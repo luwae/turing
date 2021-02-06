@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 /**
  * One token, containing type information and a pointer to its substring.
@@ -17,12 +18,12 @@ struct token {
 /**
  * Possible token types. EOF is a separate type.
  */
-#define EOF 0
-#define STATE 1
-#define MOVE 2
-#define SYM 3
-#define SYMDEF 4
-#define IDENT 5
+#define T_EOF 0
+#define T_STATEDEF 1
+#define T_SYMDEF 2
+#define T_SYM 3
+#define T_MOVE 4
+#define T_STATE 5
 
 /**
  * A lexer instance.
@@ -57,17 +58,26 @@ int is_in(char c, char *s) {
 
 char *moves = "RLN";
 char *seps = " \n\t\0";
-char *ill_syms = "()_"
+char *whitespace = " \n\t";
+uint8_t is_sym[] =  {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, // : < > are illegal
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0
+    };
 
 #define MISS 0
 #define MATCH 1
 
 #define IS_SEP(c) is_in(c, seps)
-#define IS_SYM(c) (c) >= '!' && (c) <= '~' && !is_in(c, ill_syms)
 #define IS_MOVE(c) is_in(c, moves)
 #define IN_RANGE(c, low, high) ((c) >= (low) && (c) <= (high))
 #define IS_IDENT(c) IN_RANGE(c, 'a', 'z') || IN_RANGE(c, 'A', 'Z') || IN_RANGE(c, '0', '9') || (c) == '_'
-#define IS_WHITESPACE(c) is_in(c, " \n\t")
+#define IS_WHITESPACE(c) is_in(c, whitespace)
 
 /**
  * Get the next token from a lexer.
@@ -84,7 +94,7 @@ int lexer_gettoken(lexer_state *state, token *t) {
     
     if(*pos == '\0') {
         state->terminated = 1;
-        t->type = EOF;
+        t->type = T_EOF;
         return MATCH;
     }
     if (strncmp(pos, "state", 5) == 0 && IS_SEP(*(pos + 5))) {

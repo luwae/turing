@@ -3,22 +3,13 @@
  * @author Lucas Waeldele
  */
 
-/**
- *
- * state s1:
- * struct command[nsyms]
- *
- *
- *
- *
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <tape.h>
+#include <arena.h>
 
 /**
  * Size of all states in the machine combined, in bytes.
@@ -44,6 +35,7 @@ struct tmachine {
     int nsyms;
     int nstates;
     
+    uint8_t *translator;
     char **statenames;
     
     struct command *statetab;
@@ -51,13 +43,13 @@ struct tmachine {
 };
 
 /**
- * Create a new turing machine on the heap.
+ * Create a new turing machine in the memory arena.
  * @param nsyms the number of symbols this turing machine recognizes.
  * @param nstates the number of states this turing machine has.
  * @return pointer to the new turing machine
  */
 struct tmachine *tmachine_create(int nsyms, int nstates) {
-    struct tmachine *tm = malloc(sizeof(*tm));
+    struct tmachine *tm = aalloc(sizeof(*tm));
 
     tm->nsyms = nsyms;
     tm->nstates = nstates;
@@ -66,18 +58,19 @@ struct tmachine *tmachine_create(int nsyms, int nstates) {
     return tm;
 }
 
-/**
- * Free all allocated resources of a turing machine.
- * @param tm self
- */
-void tmachine_destroy(struct tmachine *tm) {
-    tape_destroy(tm->mtape);
-
-    free(tm);
-}
-
+/* test */
 #ifdef DEBUG
+
+/**
+ * Create an example turing machine, which adds one to a given binary number.
+ */
 int main() {
-    
+    ainit();
+    struct tmachine *tm = tmachine_create(3, 2);
+    tm->translator = translator_create("_01");
+    char *statenames[] = {"smove", "sadd"};
+    tm->statenames = statenames;
+
+    afree();
 }
 #endif

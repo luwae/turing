@@ -1,0 +1,11 @@
+#add one to given number.
+
+#move to the right of the word.
+state s1
+_: < s2
+01: >
+
+#exchange 1s for 0s and replace first 0 with 1.
+state s2
+_0: 1 end
+1: 0 <
