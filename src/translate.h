@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-#define ASCII_SIZE 128
 #define TRANSLATOR_MISS 0xff
 
 uint8_t *translator_new(char *chars);

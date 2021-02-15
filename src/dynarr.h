@@ -3,23 +3,18 @@
 
 #define BLANK '_'
 
-#define BLOCK_SIZE 256
-#define BLOCK_SHIFT 8
-
-struct block {
-    char data[BLOCK_SIZE];
+/**
+ * A resizable array for a turing machine.
+ */
+struct dynarr {
+    int size; //current size (last used index is size - 1)
+    int range; //current range (power of 2)
+    char *data;
 };
 
-struct dynarr {
-    unsigned int size;
-    unsigned int nblocks;
-    struct block **blocks;
-}
-
-void dynarr_init(struct dynarr *d);
+struct dynarr *dynarr_new();
 void dynarr_free(struct dynarr *d);
-void dynarr_write(struct dynarr *d, char data, int index);
-char dynarr_read(struct dynarr *d, int index);
-int dynarr_sprint(struct dynarr *d, char *buf);
+void dynarr_setchar(struct dynarr *d, char c, int index);
+char dynarr_getchar(struct dynarr *d, int index);
 
 #endif

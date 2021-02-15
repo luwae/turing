@@ -4,7 +4,8 @@
 #define DYNARR_SIZE_MIN 8
 #define BLANK '_'
 
-/* A resizable array containing characters.
+/**
+ * A resizable array containing characters.
  */
 struct dynarr {
     unsigned int size; //current size (last used index is size - 1)
