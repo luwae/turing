@@ -6,31 +6,13 @@
 #include <string.h>
 #include <stdint.h>
 
-/**
- * Possible token types. EOF is a separate type.
- */
-#define T_EOF 0
-#define T_STATEDEF 1
-#define T_SYMDEF 2
-#define T_SYM 3
-#define T_MOVE 4
-#define T_STATE 5
+#include "lexer.h"
 
 /**
- * Token names, for debug printing.
+ * Print a token for debuging purposes.
+ * @param t self
  */
-char *tokennames[] = {"EOF", "STATEDEF", "SYMDEF", "SYM", "MOVE", "STATE"};
-
-/**
- * One token, containing type information and a pointer to its substring.
- */
-struct token {
-    int type;
-    int len;
-    char *content;
-};
-
-void token_print(struct token *t) {
+static void token_print(struct token *t) {
     char content[32] = {0};
     switch (t->type) {
         case T_EOF:
@@ -46,16 +28,11 @@ void token_print(struct token *t) {
             strncpy(content, t->content, t->len);
             printf("Token(type=%s, len=%d, content=%s\n", tokennames[t->type], t->len, content);
             break;
+        default:
+            printf("---Token(INVALID)---");
+            break;
     }
 }
-
-/**
- * A lexer instance.
- */
-struct lexer_state {
-    int terminated;
-    char *s;
-};
 
 /**
  * Initialize a lexer with an input string.
@@ -71,7 +48,7 @@ void lexer_init(struct lexer_state *state, char *s) {
  * @param s the set of possible characters
  * @return 1 if true
  */
-int is_in(char c, char *s) {
+static int is_in(char c, char *s) {
     char curr;
     while(curr = *s++) {
         if (curr == c)
@@ -107,7 +84,7 @@ uint8_t is_sym[] =  {
  * Skip all comments and whitespace characters.
  * @param state the current lexer state
  */
-void skip_ahead(struct lexer_state *state) {
+static void skip_ahead(struct lexer_state *state) {
     while (1) {
         while (IS_WHITESPACE(*(state->s))) //skip whitespace, but not \0
             state->s++; 
@@ -169,7 +146,7 @@ int lexer_gettoken(struct lexer_state *state, struct token *t) {
     while(IS_IDENT(*pos))
         pos++;
     int ident_size = pos - state->s;
-    if (ident_size >= 2 && IS_SEP(*pos)) {
+    if (ident_size > 1 && ident_size < 32 && IS_SEP(*pos)) {
         t->type = T_STATE;
         t->len = ident_size;
         t->content = state->s;
