@@ -8,7 +8,7 @@
  */
 struct dynarr {
     int size; //current size (last used index is size - 1)
-    int range; //current range (power of 2)
+    int range; //current range (power of 2); range >= size
     char *data;
 };
 
@@ -16,5 +16,6 @@ struct dynarr *dynarr_new();
 void dynarr_free(struct dynarr *d);
 void dynarr_setchar(struct dynarr *d, char c, int index);
 char dynarr_getchar(struct dynarr *d, int index);
+void dynarr_sprint(struct dynarr *d, char *s);
 
 #endif
