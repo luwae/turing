@@ -1,7 +1,7 @@
-tm1
+add
 
 [move_right] {
-  |_ < [move_left]
+  |_ < [add.move_left]
   @  >
 }
 
