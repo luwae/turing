@@ -4,6 +4,7 @@
 
 typedef uint8_t u8;
 typedef int8_t i8;
+typedef uint32_t u32;
 
 #define L (-1)
 #define R (1)
@@ -13,16 +14,18 @@ struct state;
 struct action {
     u8 start;
     u8 len;
-
-    char sym;
+    
+    u8 sym;
     i8 move;
-    struct state *next;
+    u32 next;
 };
 
 struct state {
-    u8 nactions;
-    char *name;
-    struct state *parent;
+    union {
+        u8 nactions;
+        u32 namep;
+    } info;
+    u32 parent;
     struct action actions[];
 };
 
