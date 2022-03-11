@@ -1,0 +1,40 @@
+[state1] {
+  |0 $1<[state2]
+  |_ $xff
+  |x22 >
+  |1 > {
+    |0 $2
+  }
+  @ $2>
+  #comment
+}
+
+[move_right] {
+  |_ <[move_left]
+  @  >
+}
+
+[move_left] {
+  |0 $1[]
+  |_ $1[]
+  ?0-9a-z?
+  |1 <
+}
+
+user needs to escape some chars
+escaping too much is not nice! not something like x, only control symbols
+double-pass for naming
+
+default
+ - char: same as before
+ - move: none
+ - statechange: same as before
+note: infinite loop (same char, no move, same state) is taken as STOP
+
+S  = [(a-zA-Z0-9_)*]
+CL = {
+CR = }
+D  = |(.) oder |x(0-9a-f)(0-9a-f)
+C  = $(.) oder $x(0-9a-f)(0-9a-f)
+M  = < oder >
+CM = # (.)* \n
