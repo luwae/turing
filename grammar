@@ -1,11 +1,17 @@
+add
+
 [state1] {
   |0 $1<[state2]
   |_ $xff
   |x22 >
   |1 > {
     |0 $2
+    @ $3 {
+      0| $4
+      @ [move_right]
+    }
   }
-  @ $2>
+  ?a-z >
   #comment
 }
 
@@ -20,6 +26,34 @@
   ?0-9a-z?
   |1 <
 }
+
+NAME
+
+STATE LCURLY
+  SYMDEF SYM LMOVE STATE
+  SYMDEF SYM
+  SYMDEF RMOVE
+  SYMDEF RMOVE LCURLY
+    SYMDEF SYM
+    WILDDEF SYM LCURLY
+      SYMDEF SYM
+      WILDDEF STATE
+    RCURLY
+  RCURLY
+  MATCHDEF RMOVE
+  COMMENT
+RCURLY
+
+S -> NAME STATELIST
+STATELIST -> STATEDEF STATELIST | eps
+STATEDEF -> STATE STATEBODY
+STATEBODY -> LCURLY SYMDEFLIST RCURLY
+SYMDEFLIST -> SINGLE_SYMDEF SYMDEFLIST | eps
+SINGLE_SYMDEF -> SYMDEF SYMDEF_DESC | MATCHDEF SYMDEF_DESC | WILDDEF SYMDEF_DESC
+SYMDEF_DESC -> SYM MOVE ALT
+ALT -> STATEBODY | STATE
+MOVE -> LMOVE | RMOVE | eps
+
 
 user needs to escape some chars
 escaping too much is not nice! not something like x, only control symbols
