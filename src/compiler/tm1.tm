@@ -1,7 +1,7 @@
 add
 
 [move_right] {
-  |_ < [add.move_left]
+  |_ < [move_left]
   @  >
 }
 
