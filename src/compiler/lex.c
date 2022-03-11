@@ -197,7 +197,7 @@ int varlen[] = {
 };
 
 int main() {
-    int fd = open("tm1.tm", O_RDONLY);
+    int fd = open("cursed.tm", O_RDONLY);
     if (fd == -1)
         return -1;
     int r = read(fd, buf, 4096);
