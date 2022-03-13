@@ -1,0 +1,165 @@
+r(E) {
+    > E
+}
+
+l(E) {
+    < E
+}
+
+p(a, E) {
+    Pa E
+}
+
+if(a, E, D) {
+    [a] E
+    [!] D
+}
+
+fl(a, E) {
+    if(a, E, l(%))
+}
+
+lfl(a, E) {
+    l(fl(a, E))
+}
+
+fr(a, E) {
+    if(a, E, r(%)
+}
+
+rfr(a, E) {
+    r(fr(a, E))
+}
+
+replc(a, b, E) {
+    p(#, l(fl(a, p(b, fr(#, p($))))))
+}
+
+frcascade(a, b, E) {
+    if(a, E, p(b, r(%)))
+}
+
+flcascade(a, b, E) {
+    if(a, E, p(b, l(%)))
+}
+
+push(a, b, c, d, e, f, g, h, E) {
+    P# > Pa > Pb > Pc > Pd > Pe > Pf > Pg > Ph > P# E
+}
+
+inc(E) {
+    l(if(0, p(1, fr(#, E)), if(1, p(0, l(%)), rfr(#, E))))
+}
+
+dec(E, D) {
+    l(if(0, l(%), if(1, p(0, r(frcascade(#, 1, E))), rfr(#, D))))
+}
+
+add(E) {
+    dec(lfl(#, inc(rfr(#, %))), lfl(#, E))
+}
+
+not(E) {
+    l(if(0, p(1, l(%))), if(1, p(0, l(%)), rfr(#, E))))
+}
+
+sub(E) {
+    not(inc(add(E)))
+}
+
+pop(E) {
+    lfl(#, E)
+}
+
+ifzero(E, D) {
+    l(if(1, fr(#, D), if(#, rfr(#, E), l(%))))
+}
+
+bit_and(a, E) {
+    if(0, E, p(a, E))
+}
+
+and1(E) {
+    if(#, E, l9(bit_and($, r8(%))))
+}
+
+and(E) {
+    l(and1(E))
+}
+
+bit_or(a, E) {
+    if(1, E, p(a, E))
+}
+
+bit_not(E) {
+    if(0, p(1, E), p(0, E))
+}
+
+bit_xor(a, E) {
+    if(0, p(a, E), p(a, bit_not(E)))
+}
+
+
+---EXAMPLE---
+
+push(01010101, push(11110000, and(end))) {
+    P#01010101# push(11110000, and(end))
+}
+
+push(11110000, and(end)) {
+    p#11110000# and(end)
+}
+
+and(end) {
+    l(and1(end))
+}
+
+l(and1(end)) {
+    < and1(end)
+}
+
+and1(end) {
+    [0] if(#, end, l9(bit_and(0, r8(and1(end)))))
+    [1] if(#, end, l9(bit_and(1, r8(and1(end)))))
+}
+
+if(#, end, l9(bit_and(0, r8(and1(end))))) {
+    [#] end
+    [!] l9(bit_and(0, r8(and1(end))))
+}
+
+l9(bit_and(0, r8(and1(end)))) {
+    < l8(bit_and(0, r8(and1(end))))
+}
+
+...[+8 states]
+
+bit_and(0, r8(and1(end))) {
+    if(0, r8(and1(end)), p(0, r8(and1(end))))
+}
+
+if(#, end, l9(bit_and(1, r8(and1(end))))) {
+    [#] end
+    [!] l9(bit_and(1, r8(and1(end))))
+}
+
+l9(bit_and(1, r8(and1(end)))) {
+    < l8(bit_and(1, r8(and1(end))))
+}
+
+...[+8 states]
+
+bit_and(1, r8(and1(end))) {
+    if(0, r8(and1(end)), p(1, r8(and1(end))))
+}
+
+r8(and1(end)) {
+    > r7(and1(end))
+}
+
+...[+7 states]
+
+---35 states for simple 8-bit AND---
+
+// TODO passing numbers
+// TODO passing states with arguments (Unterversorgung)

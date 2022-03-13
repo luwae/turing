@@ -1,0 +1,17 @@
+l(E) { < E }
+r(E) { > E }
+p(a, E) { $a E }
+if(a, E, B) {
+    |a E
+    |@ B
+    |_ B
+}
+fr(a, E) {
+    if(a, E, { > fr(a, E) })
+}
+fr(a, E) {
+    if(a, E, r(fr(a, E)))
+}
+rer(a, b, E) {
+    fr(a, p(b, E))
+}
