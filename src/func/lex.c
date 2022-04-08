@@ -1,40 +1,40 @@
 #include <stdio.h>
 
-#define T_EOF 0
-#define T_ERROR 1
-#define T_IDENT 2
-#define T_LCURLY '{'
-#define T_RCURLY '}'
-#define T_LPAR '('
-#define T_RPAR ')'
-#define T_LBRA '['
-#define T_RBRA ']'
-#define T_COMMA ','
-
-struct token {
-    char type;
-    int len;
-    char *s;
-};
-
-struct lex {
-    char *input;
-    char *s;
-    struct token cur;
-};
+#include "lex.h"
 
 #define IS_WHITESPACE(c) ((c) == ' ' || (c) == '\n' || (c) == '\t')
 #define IS_ALPHANUM(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z') || ((c) >= '0' && (c) <= '9') || ((c) == '_'))
+
+void lex_init(struct lex *lx, char *input) {
+    lx->input = input;
+    lx->s = input;
+    lex(lx);
+}
 
 void lex(struct lex *lx) {
     char *s = lx->s;
     // remove whitespace + comments
     for (;;) {
     	while (IS_WHITESPACE(*s)) s++;
-    	if (*s == '/' && *(s+1) == '/') {
-    	    s += 2;
-    	    while (*s != '\n' && *s != '\0') s++;
-    	    if (*s == '\n') s++;
+    	if (*s == '/') {
+    	    if (*(s + 1) == '/') {
+    	        s += 2;
+    	        while (*s != '\n' && *s != '\0') s++;
+    	        if (*s == '\n') s++;
+    	    } else if (*(s + 1) == '*') {
+    	        s += 2;
+    	        for (;;) {
+    	            while(*s != '*' && *s != '\0') s++;
+    	            if (*s++ == '*') {
+    	                if (*s == '/') {
+    	                    s++;
+    	                    break;
+    	                }
+    	            } else {
+    	                break;
+    	            }
+    	        }
+    	    }
     	} else {
     	    break;
     	}
@@ -71,7 +71,7 @@ void expect(struct lex *lx, char type) {
 
 int main() {
     struct lex lx;
-    lx.input = "  // test\nmain(E) {\n [0] r(fl(E))\n [1] l(lfl(END))\n}\n // test";
+    lx.input = "  // test\nmain(E) {\n [0] r(fl(E))\n [1] l(/***/lfl(END))\n}\n // test";
     lx.s = lx.input;
     do {
         lex(&lx);
