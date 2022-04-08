@@ -1,0 +1,23 @@
+S          -> State S | eps
+State      -> id Stateargs { Statebody }
+Stateargs  -> ( Stateargs2 | eps
+Stateargs2 -> ) | id Stateargs3
+Stateargs3 -> ) | , id Stateargs3
+Statebody  -> [ id ] Obj Statebody2 | Obj
+Statebody2 -> [ id ] Obj Statebody2 | eps
+Obj        -> id Obj2
+Obj2       -> ( Obj3 | eps
+Obj3       -> ) | Obj Obj4
+Obj4       -> ) | , Obj Obj4
+
+S          -> {id} | {#}
+State      -> {id}
+Stateargs  -> {(} | {{}
+Stateargs2 -> {)} | {id}
+Stateargs3 -> {)} | {,}
+Statebody  -> {[} | {id}
+Statebody2 -> {[} | {}}
+Obj        -> {id}
+Obj2       -> {(} | {}, [, ,}
+Obj3       -> {)} | {id}
+Obj4       -> {)} | {,}
