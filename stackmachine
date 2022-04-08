@@ -15,6 +15,14 @@ if(a, E, D) {
     [!] D
 }
 
+if2(a, E, b, F, D) {
+    if(a, E, if(b, F, D))
+}
+
+if3(a, E, b, F, c, G, D) {
+    if(a, E, if(b, F, if(c, G, D)))
+}
+
 fl(a, E) {
     if(a, E, l(%))
 }
@@ -24,7 +32,7 @@ lfl(a, E) {
 }
 
 fr(a, E) {
-    if(a, E, r(%)
+    if(a, E, r(%))
 }
 
 rfr(a, E) {
@@ -48,7 +56,11 @@ push(a, b, c, d, e, f, g, h, E) {
 }
 
 inc(E) {
-    l(if(0, p(1, fr(#, E)), if(1, p(0, l(%)), rfr(#, E))))
+    l(if(0, p(1, fr(#, E)), if(1, p(0, %), rfr(#, E))))
+}
+
+inc(E) {
+    l(sw(0, p(1, fr(#, E)), 1, p(0, %), rfr(#, E)))
 }
 
 dec(E, D) {
@@ -97,6 +109,10 @@ bit_not(E) {
 
 bit_xor(a, E) {
     if(0, p(a, E), p(a, bit_not(E)))
+}
+
+dup1(E) {
+    if(#, rfr(#, rfr(#, E)), r9(p($, l10(%))))
 }
 
 
