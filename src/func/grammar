@@ -1,23 +1,28 @@
-S          -> State S | eps
-State      -> id Stateargs { Statebody }
+S          -> id Stateargs { Statebody } S | eps
 Stateargs  -> ( Stateargs2 | eps
-Stateargs2 -> ) | id Stateargs3
-Stateargs3 -> ) | , id Stateargs3
-Statebody  -> [ id ] Obj Statebody2 | Obj
-Statebody2 -> [ id ] Obj Statebody2 | eps
+Stateargs2 -> ) | Stateargs4
+Stateargs3 -> ) | , Stateargs4
+Stateargs4 -> id Stateargs3 | Char Stateargs3
+Statebody  -> [ Charargs ] Actions Obj Statebody | Actions Obj | eps
+Charargs   -> Char Charargs2
+Charargs2  -> eps | , Charargs
+Actions    -> > Actions | < Actions | = Char Actions | eps
+Char       -> cimm | cvar
 Obj        -> id Obj2
-Obj2       -> ( Obj3 | eps
-Obj3       -> ) | Obj Obj4
-Obj4       -> ) | , Obj Obj4
+Obj2       -> ( Obj Obj3 | eps
+Obj3       -> ) | , Obj Obj3
+
 
 S          -> {id} | {#}
-State      -> {id}
 Stateargs  -> {(} | {{}
-Stateargs2 -> {)} | {id}
+Stateargs2 -> {)} | {id cimm cvar}
 Stateargs3 -> {)} | {,}
-Statebody  -> {[} | {id}
-Statebody2 -> {[} | {}}
+Stateargs4 -> {id} | {cimm cvar}
+Statebody  -> {[} | {< > = id} | {}}
+Charargs   -> {cimm cvar}
+Charargs2  -> {]} | {,}
+Actions    -> {>} | {<} | {=} | {id}
+Char       -> {cimm} | {cvar}
 Obj        -> {id}
-Obj2       -> {(} | {}, [, , )}
-Obj3       -> {)} | {id}
-Obj4       -> {)} | {,}
+Obj2       -> {(} | {[ < > = id }}
+Obj3       -> {)} | {,}
