@@ -4,6 +4,101 @@ class ParseError(Exception):
     def __init__(self, msg):
         super().__init__(msg)
 
+class StateArg:
+    def __init__(self, tp, name):
+        self.tp = tp
+        self.name = name
+
+    def __str__(self):
+        s = f"{self.tp} {self.name}"
+
+    def __repr__(self):
+        return str(self)
+
+class CallArg:
+    def __init__(self, tp, arg):
+        self.tp = tp
+        self.arg = arg
+
+    def __str__(self):
+        return str(self.arg)
+
+    def __repr__(self):
+        return str(self)
+
+class Call:
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
+
+class Primitive:
+    def __init__(self, tp, arg):
+        self.tp = tp
+        self.arg = arg
+
+    def __str__(self):
+        if self.tp in "<>":
+            return self.tp
+        elif self.tp == "=":
+            return "=" + str(self.arg)
+        else:
+            raise ValueError
+
+    def __repr__(self):
+        return str(self)
+
+class Action:
+    def __init__(self, primitives, call):
+        self.primitives = primitives
+        self.call = call
+
+class Branch:
+    def __init__(self, chars, action):
+        self.chars = chars # also CallArgs
+        self.action = action
+
+    def __str__(self):
+        s = "["
+        for i, char in enumerate(chars):
+            s += str(char)
+            if i < len(chars - 1):
+                s += ", "
+        s += "] "
+        return s + str(action)
+
+    def __repr__(self):
+        return str(self)
+
+class State:
+    def __init__(self, name, args, branches, default):
+        self.name = name
+        self.args = args
+        self.branches = branches
+        self.default = default
+
+    def __str__(self):
+        s = self.name
+        if self.args:
+            s += "("
+            for i, arg in enumerate(self.args):
+                s += str(arg)
+                if i < len(self.args) - 1:
+                    s += ", "
+                else:
+                    s += ") {\n"
+        else:
+            s += " {\n"
+
+        for branch in self.branches:
+            # TODO
+
+        s += "}"
+        return s
+        
+
+    def __repr__(self):
+        return str(self)
+
 def expect(lx, tp, cont=True):
     if lx.tok.tp != tp:
         raise ParseError(f"expected {tp}, but got {lx.tok.tp}")
@@ -23,26 +118,26 @@ def parseS(lx):
         lx.lex()
         stateargs = parseStateargs(lx)
         expect(lx, "lcurly")
-        statebody = parseStatebody(lx)
+        branches, default = parseStatebody(lx)
         expect(lx, "rcurly")
-        states.append((statename, stateargs, statebody))
+        states.append(State(statename, stateargs, branches, default))
     return states
 
 def parseStateargs(lx):
     print("parseStateargs")
-    if lx.tok.tp == "eof":
+    if lx.tok.tp == "lcurly":
         return []
 
     args = []
     expect(lx, "lpar")
     while True:
         if lx.tok.tp == "ident":
-            args.append(("s", lx.tok.s))
+            args.append(StateArg("s", lx.tok.s))
             lx.lex()
         elif lx.tok.tp == "chr_var":
             lx.lex()
             expect(lx, "ident", False)
-            args.append(("c", lx.tok.s))
+            args.append(StateArg("v", lx.tok.s))
             lx.lex()
         else:
             raise ParseError("error parsing state args: no state or char")
@@ -73,8 +168,6 @@ def parseStatebody(lx):
         actions = parseActions(lx)
         obj = parseObj(lx)
         default = (actions, obj)
-    else:
-        expect(lx, "rbra", False)
 
     return branches, default
 
@@ -152,11 +245,13 @@ def parseObj2(lx):
 
 if __name__ == "__main__":
     t = """
+      end { }
+      main {
+        fr('_', p('X', end))
+      }
       fr($a, E) {
         [$a] E
-        ['f'] <<='f'<< main(p('#', END))
-        ['x00', 'x0f'] _Other2
-        fr($a, E)
+        > fr($a, E)
       }
     """
     states = parse(t)
