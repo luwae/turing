@@ -303,6 +303,51 @@ def parseObj2(lx):
     return args
 
 
+
+
+def resolve(states, elemental_set, state_name, concrete_args): # list of CallArg
+    state_candidates = list(filter(lambda s: s.name == state_name, states))
+    if len(state_candidates) != 1:
+        raise ValueError(f"no state or more than one state named {state_name}")
+    state = state_candidates[0]
+
+    if len(state.args) != len(concrete_args):
+        raise ValueError(f"invalid number of arguments for {state_name}: {len(concrete_args)}")
+    z = zip(state.args, concrete_args)
+    char_args = {}
+    state_args = {}
+    for sa, ca in z:
+        if sa.tp == "v":
+            if ca.tp != "i":
+                raise ValueError(f"invalid parameter bound to {sa}: {ca}")
+            char_args[sa.name] = ca
+        elif sa.tp == "s":
+            if ca.tp != "c":
+                raise ValueError(f"invalid parameter bound to {sa}: {ca}")
+            state_args[sa.name] = ca
+
+    resolved_name = state.name
+    if state.args:
+        resolved_name += "("
+        z = zip(state.args, concrete_args)
+        for i, (sa, ca) in enumerate(z):
+            resolved_name += str(ca)
+            if i < len(state.args) - 1:
+                resolved_name += ", "
+        resolved_name += ")"
+    print(resolved_name)
+    elemental_set.add(resolved_name)
+
+    # TODO function needed to apply arguments in State
+
+
+
+#first actual state, then arguments (pay attention to recursion)
+
+#resolve(main) -> "main"
+#resolve(fr, ['_', p('X', end)]) -> "fr('_', p('X', end))"
+#resolve()
+
 if __name__ == "__main__":
     t = """
       end { }
@@ -319,3 +364,12 @@ if __name__ == "__main__":
     """
     states = parse(t)
     print(states)
+
+    main_candidates = list(filter(lambda s: s.name == "main" and not s.args, states))
+    if len(main_candidates) != 1:
+        raise ValueError("no main state or more than one")
+
+    main = main_candidates[0]
+
+    elemental_set = set()
+    resolve(states, elemental_set, "fr", [CallArg("i", "a"), CallArg("c", Call("end", [CallArg("i", "X")]))])
