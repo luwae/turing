@@ -5,72 +5,129 @@ class ParseError(Exception):
         super().__init__(msg)
 
 class StateArg:
+    """Argument to a machine state.
+    Can be either a variable character ("v") or state ("s").
+    """
     def __init__(self, tp, name):
         self.tp = tp
         self.name = name
 
     def __str__(self):
-        s = f"{self.tp} {self.name}"
+        if self.tp == "v":
+            return f"${self.name}"
+        return self.name
 
     def __repr__(self):
         return str(self)
 
 class CallArg:
+    """Argument to a state call or an in-state branch.
+    Can be either a variable character ("v"), immediate ("i"), or call ("c").
+    """
     def __init__(self, tp, arg):
         self.tp = tp
         self.arg = arg
 
     def __str__(self):
+        if self.tp == "v":
+            return f"${self.arg}"
+        if self.tp == "i":
+            return f"'{self.arg}'"
         return str(self.arg)
 
     def __repr__(self):
         return str(self)
 
 class Call:
+    """Concrete state call.
+    self.args is a (possibly empty) list of CallArg.
+    """
     def __init__(self, name, args):
         self.name = name
         self.args = args
 
+    def __str__(self):
+        if not self.args:
+            return self.name
+        s = f"{self.name}("
+        for i, arg in enumerate(self.args):
+            s += str(arg)
+            if i < len(self.args) - 1:
+                s += ", "
+        s += ")"
+        return s
+
+    def __repr__(self):
+        return str(self)
+
+    def elemental(self):
+        return not self.args
+
 class Primitive:
-    def __init__(self, tp, arg):
+    """Primitive turing operation.
+    Can be either move left ("<"), move right (">"), or print("=").
+    If print, self.arg is the character to print (CallArg).
+    """
+    def __init__(self, tp, arg=None):
         self.tp = tp
         self.arg = arg
 
     def __str__(self):
         if self.tp in "<>":
             return self.tp
-        elif self.tp == "=":
-            return "=" + str(self.arg)
-        else:
-            raise ValueError
+        return "=" + str(self.arg)
 
     def __repr__(self):
         return str(self)
 
 class Action:
+    """A compound action with primitives and a state call.
+    self.primitives is a list of Primitive.
+    self.call is a Call.
+    """
     def __init__(self, primitives, call):
         self.primitives = primitives
         self.call = call
 
-class Branch:
-    def __init__(self, chars, action):
-        self.chars = chars # also CallArgs
-        self.action = action
-
     def __str__(self):
-        s = "["
-        for i, char in enumerate(chars):
-            s += str(char)
-            if i < len(chars - 1):
-                s += ", "
-        s += "] "
-        return s + str(action)
+        if not self.primitives:
+            return str(self.call)
+        s = "".join(map(str, self.primitives))
+        s += " "
+        return s + str(self.call)
 
     def __repr__(self):
         return str(self)
 
+    def elemental(self):
+        return elemental(self.call)
+
+class Branch:
+    """A branch consisting of a list of chars (CallArg) and an action.
+    """
+    def __init__(self, chars, action):
+        self.chars = chars
+        self.action = action
+
+    def __str__(self):
+        s = "["
+        for i, char in enumerate(self.chars):
+            s += str(char)
+            if i < len(self.chars) - 1:
+                s += ", "
+        s += "] "
+        return s + str(self.action)
+
+    def __repr__(self):
+        return str(self)
+
+    def elemental(self):
+        return elemental(self.action)
+
 class State:
-    def __init__(self, name, args, branches, default):
+    """A complete state consisting of a name, state args, branches, and default action.
+    """
+    def __init__(self, name, args=None, branches=None, default=None):
         self.name = name
         self.args = args
         self.branches = branches
@@ -84,20 +141,22 @@ class State:
                 s += str(arg)
                 if i < len(self.args) - 1:
                     s += ", "
-                else:
-                    s += ") {\n"
+            s += ") {\n"
         else:
             s += " {\n"
 
         for branch in self.branches:
-            # TODO
-
+            s += f"  {branch}\n"
+        if self.default:
+            s += f"  {self.default}\n"
         s += "}"
         return s
         
-
     def __repr__(self):
         return str(self)
+
+    def elemental(self):
+        return not self.args and all(map(lambda b: b.elemental(), self.branches)) and self.default.elemental()
 
 def expect(lx, tp, cont=True):
     if lx.tok.tp != tp:
@@ -162,24 +221,24 @@ def parseStatebody(lx):
         expect(lx, "rbra")
         actions = parseActions(lx)
         obj = parseObj(lx)
-        branches.append((charargs, actions, obj))
+        branches.append(Branch(charargs, Action(actions, obj)))
     
     if lx.tok.tp in ("movel", "mover", "print", "ident"):
         actions = parseActions(lx)
         obj = parseObj(lx)
-        default = (actions, obj)
+        default = Action(actions, obj)
 
     return branches, default
 
 def parseChar(lx):
     print("parseChar")
     if lx.tok.tp == "chr_imm":
-        c = ("i", lx.tok.s)
+        c = CallArg("i", lx.tok.s)
         lx.lex()
         return c
     expect(lx, "chr_var")
     expect(lx, "ident", False)
-    c = ("v", lx.tok.s)
+    c = CallArg("v", lx.tok.s)
     lx.lex()
     return c
 
@@ -202,11 +261,11 @@ def parseActions(lx):
     actions = []
     while lx.tok.tp in ("movel", "mover", "print"):
         if lx.tok.tp in ("movel", "mover"):
-            actions.append(lx.tok.tp)
+            actions.append(Primitive(lx.tok.s))
             lx.lex()
         else:
             lx.lex()
-            actions.append(("print", parseChar(lx)))
+            actions.append(Primitive("=", parseChar(lx)))
 
     print("return from parseActions")
     return actions
@@ -216,7 +275,7 @@ def parseObj(lx):
     expect(lx, "ident", False)
     name = lx.tok.s
     lx.lex()
-    obj = name, parseObj2(lx)
+    obj = Call(name, parseObj2(lx))
 
     print("return from parseObj")
     return obj
@@ -224,14 +283,15 @@ def parseObj(lx):
 def parseObj2(lx):
     print("parseObj2")
     args = []
-    if lx.tok.tp in ("lbra", "movel", "mover", "print", "ident", "rpar"):
+    if lx.tok.tp != "lpar":
+        print("return from parseObj2")
         return
     expect(lx, "lpar")
     while True:
         if lx.tok.tp in ("chr_imm", "chr_var"):
             args.append(parseChar(lx))
         elif lx.tok.tp == "ident":
-            args.append(parseObj(lx))
+            args.append(CallArg("c", parseObj(lx)))
         if lx.tok.tp == "comma":
             lx.lex()
             continue
@@ -239,7 +299,7 @@ def parseObj2(lx):
             lx.lex()
             break
 
-    print("return from parseObj2")
+    print("return from parseObj2:", len(args))
     return args
 
 
@@ -248,6 +308,9 @@ if __name__ == "__main__":
       end { }
       main {
         fr('_', p('X', end))
+      }
+      p($a, E) {
+        =$a E
       }
       fr($a, E) {
         [$a] E
