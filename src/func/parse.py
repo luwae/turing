@@ -158,6 +158,15 @@ class State:
     def elemental(self):
         return not self.args and all(map(lambda b: b.elemental(), self.branches)) and self.default.elemental()
 
+    def apply_args(self, concrete_args):
+        concrete_branches = None
+        if self.branches:
+            concrete_branches = b.substitute() for b in self.branches
+        concrete_default = None
+        if self.default:
+            concrete_default = self.default.substitute() # TODO what args?
+        return State(self.name, None, )
+
 def expect(lx, tp, cont=True):
     if lx.tok.tp != tp:
         raise ParseError(f"expected {tp}, but got {lx.tok.tp}")
