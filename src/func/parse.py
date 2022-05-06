@@ -4,141 +4,146 @@ class ParseError(Exception):
     def __init__(self, msg):
         super().__init__(msg)
 
+@dataclass(frozen=True)
 class StateArg:
     """Argument to a machine state.
     Can be either a variable character ("v") or state ("s").
     """
-    def __init__(self, tp, name):
-        self.tp = tp
-        self.name = name
+    tp: str
+    name: str
 
-    def __str__(self):
+    def pretty(self):
         if self.tp == "v":
             return f"${self.name}"
         return self.name
 
-    def __repr__(self):
-        return str(self)
+class Call:
+    pass
 
+@dataclass(frozen=True)
 class CallArg:
     """Argument to a state call or an in-state branch.
     Can be either a variable character ("v"), immediate ("i"), or call ("c").
     """
-    def __init__(self, tp, arg):
-        self.tp = tp
-        self.arg = arg
+    tp: str
+    arg = str | Call
 
-    def __str__(self):
+    def pretty(self):
         if self.tp == "v":
             return f"${self.arg}"
         if self.tp == "i":
             return f"'{self.arg}'"
-        return str(self.arg)
+        return self.arg.pretty()
 
-    def __repr__(self):
-        return str(self)
+    def substitute(self, mapping):
+        is self.tp == "v":
+            return CallArg("v", ) # TODO
 
+@dataclass(frozen=True)
 class Call:
     """Concrete state call.
     self.args is a (possibly empty) list of CallArg.
     """
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
+    name: str
+    args: list[CallArg]
 
-    def __str__(self):
+    def pretty(self):
         if not self.args:
             return self.name
         s = f"{self.name}("
         for i, arg in enumerate(self.args):
-            s += str(arg)
+            s += arg.pretty()
             if i < len(self.args) - 1:
                 s += ", "
         s += ")"
         return s
 
-    def __repr__(self):
-        return str(self)
-
     def elemental(self):
         return not self.args
 
+    def substitute(self, mapping):
+        if StateArg("s", self.name) in mapping and self.args:
+            raise ValueError(f"can not substitute non-elemental state {self.name}")
+        return Call(self.name, map(lambda c: c.substitute(mapping), self.args))
+
+@dataclass(frozen=True)
 class Primitive:
     """Primitive turing operation.
     Can be either move left ("<"), move right (">"), or print("=").
     If print, self.arg is the character to print (CallArg).
     """
-    def __init__(self, tp, arg=None):
-        self.tp = tp
-        self.arg = arg
+    tp: str
+    arg: CallArg
 
-    def __str__(self):
+    def pretty(self):
         if self.tp in "<>":
             return self.tp
-        return "=" + str(self.arg)
+        return "=" + self.arg.pretty()
 
-    def __repr__(self):
-        return str(self)
+    def substitute(self, mapping):
+        is self.tp == "=":
+            return Primitive("=", mapping.get(self.arg, default=self.arg))
 
+@dataclass(frozen=True)
 class Action:
     """A compound action with primitives and a state call.
     self.primitives is a list of Primitive.
     self.call is a Call.
     """
-    def __init__(self, primitives, call):
-        self.primitives = primitives
-        self.call = call
+    primitives: list[Primitive]
+    call: Call
 
-    def __str__(self):
+    def pretty(self):
         if not self.primitives:
             return str(self.call)
-        s = "".join(map(str, self.primitives))
+        s = "".join(map(lambda p: p.pretty(), self.primitives))
         s += " "
-        return s + str(self.call)
-
-    def __repr__(self):
-        return str(self)
+        return s + self.call.pretty()
 
     def elemental(self):
         return elemental(self.call)
 
+    def substitute(self, mapping):
+        return Action(map(lambda c: c.substitute(mapping), self.primitives), self.call.substitute(mapping))
+
+@dataclass(frozen=True)
 class Branch:
     """A branch consisting of a list of chars (CallArg) and an action.
     """
-    def __init__(self, chars, action):
-        self.chars = chars
-        self.action = action
+    chars: list[CallArg]
+    action: Action
 
-    def __str__(self):
+    def pretty(self):
         s = "["
         for i, char in enumerate(self.chars):
-            s += str(char)
+            s += char.pretty()
             if i < len(self.chars) - 1:
                 s += ", "
         s += "] "
-        return s + str(self.action)
-
-    def __repr__(self):
-        return str(self)
+        return s + self.action.pretty()
 
     def elemental(self):
         return elemental(self.action)
 
+    def substitute(self, mapping):
+        concrete_chars = map(lambda c: mapping.get(c, default=c))
+        return Branch(concrete_chars, self.action.substitute(mapping))
+
+@dataclass(frozen=True)
 class State:
     """A complete state consisting of a name, state args, branches, and default action.
     """
-    def __init__(self, name, args=None, branches=None, default=None):
-        self.name = name
-        self.args = args
-        self.branches = branches
-        self.default = default
+    name: str
+    args: list[StateArg]
+    branches: list[Branch]
+    default: Action
 
-    def __str__(self):
+    def pretty(self):
         s = self.name
         if self.args:
             s += "("
             for i, arg in enumerate(self.args):
-                s += str(arg)
+                s += arg.pretty()
                 if i < len(self.args) - 1:
                     s += ", "
             s += ") {\n"
@@ -151,21 +156,28 @@ class State:
             s += f"  {self.default}\n"
         s += "}"
         return s
-        
-    def __repr__(self):
-        return str(self)
 
     def elemental(self):
         return not self.args and all(map(lambda b: b.elemental(), self.branches)) and self.default.elemental()
 
     def apply_args(self, concrete_args):
+        if len(concrete_args) != len(self.args):
+            raise ValueError(f"invalid number of arguments for state {self.name}: {len(concrete_args)} (expected {len(self.args)})")
+        for sa, ca in zip(self.args, concrete_args):
+            if (sa.tp == "v" and ca.tp != "i") or (sa.tp == "s" and ca.tp != "c"):
+                raise ValueError(f"invalid argument for state {self.name}: {ca} (expected type {sa.tp})")
+
+        mapping = {sa, ca for sa, ca in zip(self.args, concrete_args)}
+
         concrete_branches = None
         if self.branches:
-            concrete_branches = b.substitute() for b in self.branches
+            concrete_branches = [b.substitute(mapping) for b in self.branches]
         concrete_default = None
         if self.default:
-            concrete_default = self.default.substitute() # TODO what args?
-        return State(self.name, None, )
+            concrete_default = self.default.substitute(mapping)
+        return State(self.name, None, concrete_branches, concrete_default)
+
+
 
 def expect(lx, tp, cont=True):
     if lx.tok.tp != tp:
