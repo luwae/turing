@@ -1,2 +1,4 @@
 __pycache__
 *.swp
+*.o
+lex_test
