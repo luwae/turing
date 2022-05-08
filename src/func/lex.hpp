@@ -5,23 +5,23 @@
 
 namespace lex {
 
-enum TokenType : char {
+enum TokenType {
     eof = 0,
     error = 1,
     chr_imm = 2,
     ident = 3,
 
-    movel = '<',
-    mover = '>',
-    print = '=',
-    lcurly = '{',
-    rcurly = '}',
-    lpar = '(',
-    rpar = ')',
-    lbracket = '[',
-    rbracket = ']',
-    comma = ',',
-    chr_var = '$'
+    movel = 4,
+    mover = 5,
+    print = 6,
+    lcurly = 7,
+    rcurly = 8,
+    lpar = 9,
+    rpar = 10,
+    lbracket = 11,
+    rbracket = 12,
+    comma = 13,
+    chr_var = 14
 };
 
 class Lexer {

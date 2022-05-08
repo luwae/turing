@@ -1,8 +1,10 @@
 #include <cctype>
 #include <stdexcept>
+#include <map>
 
 #include "lex.hpp"
 
+using std::map;
 using std::string;
 using std::runtime_error;
 
@@ -22,14 +24,22 @@ void Lexer::lex() {
     while(isspace(s[cur]))
         ++cur;
 
-    string single_chars("<>={}()[],$");
+    static map<char, TokenType> single_chars = {
+        {'<', movel}, {'>', mover},
+        {'{', lcurly}, {'}', rcurly},
+        {'(', lpar}, {')', rpar},
+        {'[', lbracket}, {']', rbracket},
+        {'=', print}, {',', comma}, {'$', chr_var}
+    };
+
     char c = s[cur];
+    auto single_found = single_chars.find(c);
     if (c == '\0') {
         done = true;
         settoken(eof, 1, cur);
         return;
-    } else if (single_chars.find(c) != string::npos) {
-        settoken((TokenType) c, 1, cur);
+    } else if (single_found != single_chars.end()) {
+        settoken(single_found->second, 1, cur);
         ++cur;
         return;
     } else if (c == '\'') {
@@ -75,11 +85,11 @@ void Lexer::lex() {
 string Lexer::tokname(TokenType t) {
     static string names[] = {
         "eof", "error", "chr_imm", "ident",
+        "movel", "mover", "print", "lcurly", "rcurly",
+        "lpar", "rpar", "lbracket", "rbracket",
+        "comma", "chr_var"
     };
-    if (t <= 3) {
-        return names[t];
-    }
-    return string(1, t);
+    return names[t];
 }
 
 void Lexer::expect(TokenType t) {
