@@ -28,6 +28,8 @@ class Call;
 
 class CallArg {
 public:
+    CallArg(CallArgType t, int ai): type(t), arg.arg_index(ai) { }
+    CallArg(CallArgType t, unsigned char c): type(t), arg.imm(c) { }
     const CallArgType type;
     const union {
         int arg_index;
@@ -59,6 +61,9 @@ enum PrimitiveType {
 
 class Primitive {
 public:
+    Primitive(PrimitiveType t): type(t) { }
+    Primitive(PrimitiveType t, unsigned char c): type(t), arg(CallArgType::chr_imm, c) { }
+    Primitive(PrimitiveType t, int ai): type(t), arg(CallArgType::chr_var, ai) { }
     const PrimitiveType type;
     const CallArg arg;
 };
@@ -93,7 +98,7 @@ private:
     void parseStateargs(State *state);
     void parseStatebody(State *state);
     Lexer lx;
-    map<string, State *> states;
+    vector<State> states;
 };
 
 }
