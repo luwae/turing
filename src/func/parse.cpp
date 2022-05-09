@@ -83,6 +83,34 @@ unsigned char convert_immediate(const string &s) {
     return v;
 }
 
+int find_arg(const state *s, const string &substring, StateArgType t) {
+    int index = 0;
+    for (const auto &arg : s->args) {
+        if (arg.name == substring && arg.type == t)
+            break;
+        ++index;
+    }
+    return index;
+}
+
+CallArg Parser::parseChar(const State *s) {
+    TokenType tt = lx.toktype();
+    if (tt == TokenType::chr_imm) {
+        string name = lx.substring();
+        lx.lex();
+        return CallArg(CallArgType::chr_imm, convert_immediate(name));
+    } else if (tt == TokenType::chr_var) {
+        string name = lx.substring()
+        int index = find_arg(s, name, StateArgType::chr_var);
+        if (index == s->args.size())
+            throw runtime_error("unrecognized char argument " + name);
+        lx.lex();
+        return CallArg(CallArgType::chr_var, index);
+    } else {
+        throw runtime_error("expected character");
+    }
+}
+
 void Parser::parseActions(State *state, Action &action) {
     TokenType tt;
 
@@ -121,4 +149,12 @@ void Parser::parseActions(State *state, Action &action) {
     }
 }
 
+Parser::parseCharargs(State *s, Branch *b)
+    while (true) {
+        b->chars.push_back(parseChar(s));
+        if (lx.toktype() != TokenType::comma)
+            break;
+        lx.lex();
+    }
+    lx.expect(TokenType::rbracket);
 }
