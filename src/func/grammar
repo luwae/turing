@@ -11,7 +11,7 @@ Actions    -> > Actions | < Actions | = Char Actions | eps
 Char       -> cimm | cvar
 Obj        -> id Obj2
 Obj2       -> ( Obj3 | eps
-Obj3       -> Char Obj4 | Obj Obj4
+Obj3       -> Char Obj4 | Obj Obj4   # Note: can't communicate that variable states cannot be given arguments
 Obj4       -> , Obj3 | )
 
 
