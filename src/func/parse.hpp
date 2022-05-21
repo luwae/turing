@@ -1,104 +1,116 @@
 #ifndef PARSE_HPP
 #define PARSE_HPP
 
+#include <iostream>
 #include <string>
 #include <vector>
+
+#include "lex.hpp"
 
 namespace parse {
 
 enum StateArgType {
-    chr_var = 0;
-    state_var = 1;
+    sat_chr_var = 0,
+    sat_state_var = 1
 };
 
 class StateArg {
 public:
-    StateArg(StateArgType t, const std::string &n): type(t), name(n) { }
-    const StateArgType type;
-    const std::string name;
+    StateArg(StateArgType t, std::string n): type(t), name(n) { }
+    StateArgType type;
+    std::string name;
 };
 
 enum CallArgType {
-    chr_var = 0;
-    chr_imm = 1;
-    call = 2;
+    cat_chr_var = 0,
+    cat_chr_imm = 1,
+    cat_call = 2
 };
 
 class Call;
 
 class CallArg {
 public:
-    CallArg(CallArgType t, int ai): type(t), arg.arg_index(ai) { }
-    CallArg(CallArgType t, unsigned char c): type(t), arg.imm(c) { }
-    const CallArgType type;
-    const union {
-        int arg_index;
-        unsigned char imm;
-        Call call;
-    } arg;
+    CallArg() = default;
+    CallArg(unsigned char i): type(CallArgType::cat_chr_imm), imm(i) { }
+    CallArg(int ind): type(CallArgType::cat_chr_var), index(ind) { }
+    CallArg(Call *c): type(CallArgType::cat_call), call(c) { }
+    CallArgType type;
+    int index;
+    unsigned char imm;
+    Call *call;
 };
 
 enum CallType {
-    state_var = 0;
-    state_imm = 1;
+    ct_state_var = 0,
+    ct_state_imm = 1
 };
 
 class Call {
 public:
-    const CallType type;
-    const union {
-        int arg_index;
-        const std::string name;
-    } toplevel;
-    const std::vector<CallArg> args;
+    CallType type;
+    int index;
+    std::string name;
+    std::vector<CallArg> args;
 };
 
 enum PrimitiveType {
-    movel = 0,
-    mover = 1,
-    print = 2
+    pt_movel = 0,
+    pt_mover = 1,
+    pt_print = 2
 };
 
 class Primitive {
 public:
+    Primitive() = default;
     Primitive(PrimitiveType t): type(t) { }
-    Primitive(PrimitiveType t, unsigned char c): type(t), arg(CallArgType::chr_imm, c) { }
-    Primitive(PrimitiveType t, int ai): type(t), arg(CallArgType::chr_var, ai) { }
-    const PrimitiveType type;
-    const CallArg arg;
+    Primitive(unsigned char i): type(PrimitiveType::pt_print), arg(i) { }
+    Primitive(int ind): type(PrimitiveType::pt_print), arg(ind) { }
+    PrimitiveType type;
+    CallArg arg;
 };
 
 class Action {
 public:
-    const std::vector<Primitives> primitives;
-    const Call call;
+    std::vector<Primitive> primitives;
+    Call *call;
 };
 
 class Branch {
 public:
-    const std::vector<CallArg> chars;
-    const Action action;
+    std::vector<CallArg> chars;
+    Action action;
 };
 
 class State {
 public:
-    State(const std::string &n): name(n) { }
-private:
-    const std::string name
-    const std::vector<StateArg> args;
-    const std::vector<Branch> branches;
-    const Action deflt;
+    std::string name;
+    std::vector<StateArg> args;
+    std::vector<Branch> branches;
+    Action deflt;
 };
+
+std::ostream &operator<<(std::ostream &os, const StateArg &sa);
+std::ostream &operator<<(std::ostream &os, const Call &c);
+std::ostream &operator<<(std::ostream &os, const CallArg &ca);
+std::ostream &operator<<(std::ostream &os, const Primitive &p);
+std::ostream &operator<<(std::ostream &os, const Action &a);
+std::ostream &operator<<(std::ostream &os, const Branch &b);
+std::ostream &operator<<(std::ostream &os, const State &s);
 
 class Parser {
 public:
     Parser(const std::string &input): lx(input) { parse(); }
+    std::vector<State> states;
 private:
     void parse();
-    void parseStateargs(State *state);
-    void parseStatebody(State *state);
-    Lexer lx;
-    vector<State> states;
+    void parseStateargs(State &s);
+    void parseStatebody(State &s);
+    CallArg parseChar(State &s);
+    void parsePrimitives(State &s, Action &a);
+    void parseCharargs(State &s, Branch &b);
+    Call *parseCall(State &s);
+    lex::Lexer lx;
 };
 
 }
