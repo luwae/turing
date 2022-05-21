@@ -27,8 +27,8 @@ unsigned char &Tape::operator[](int index) {
 
 ostream &operator<<(ostream &os, const Tape &t) {
     for (auto i = t.left.rbegin(); i != t.left.rend(); ++i)
-        cout << *i;
+        os << *i;
     for (unsigned char c : t.right)
-        cout << c;
+        os << c;
     return os;
 }

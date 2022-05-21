@@ -12,9 +12,9 @@ public:
     Tape(const std::string &input): right(input.begin(), input.end()) { }
     Tape(const std::vector<unsigned char> &v): right(v.begin(), v.end()) { }
     unsigned char &operator[](int index);
-    int size() { return right.size() + left.size(); }
-    int rsize() { return right.size(); }
-    int lsize() { return left.size(); }
+    int size() const { return right.size() + left.size(); }
+    int rsize() const { return right.size(); }
+    int lsize() const { return left.size(); }
 private:
     std::vector<unsigned char> right;
     std::vector<unsigned char> left;
