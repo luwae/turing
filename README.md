@@ -1,12 +1,19 @@
 # turing
 Tools to design and run turing machines.
 
-Finished features:
-
 Planned features:
- * descriptive language (and compiler) for specifying abstract turing machines
-    + fast design of complex machines
-    + can be compiled down to a concrete turing machine
- * descriptive language (and compiler) for specifying concrete turing machines
- * interpreter
- * runtime
+ * abstract turing machines
+    + language grammar
+    + compiler (source-to-source)
+    + interpreter
+ * concrete turing machines
+    + language grammar
+    + compiler
+    + runtime
+
+Finished features:
+ * abstract turing machines
+    + language grammar
+ * concrete turing machines
+    + language grammar
+    + runtime

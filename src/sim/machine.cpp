@@ -106,7 +106,7 @@ int main() {
     tm.statemap.insert({"mvl", 1});
     tm.statemap.insert({"end", 2});
 
-    Tape t("1111");
+    Tape t("101011");
 
     tm.print(t);
     cout << endl;
