@@ -71,7 +71,7 @@ void Parser::parseStatebody(State &s) {
         lx.expect(TokenType::rbracket);
 
         parsePrimitives(s, b.action);
-        b.action.call = parseCall(s);
+        b.action.call = std::unique_ptr<Call>(parseCall(s));
         s.branches.push_back(b);
     }
 
@@ -79,7 +79,7 @@ void Parser::parseStatebody(State &s) {
     if (tt == TokenType::movel || tt == TokenType::mover
             || tt == TokenType::print || tt == TokenType::ident) {
         parsePrimitives(s, s.deflt);
-        s.deflt.call = parseCall(s);
+        s.deflt.call = std::unique_ptr<Call>(parseCall(s));
     }
 }
 
@@ -191,6 +191,7 @@ Call *Parser::parseCall(State &s) {
         c->index = index;
         lx.lex();
         // can't pass args to variable state
+        // maybe we want this??? don't see what could go wrong
         return c;
     }
 
@@ -201,7 +202,7 @@ Call *Parser::parseCall(State &s) {
             if (tt == TokenType::chr_imm || tt == TokenType::chr_var) {
                 c->args.push_back(parseChar(s));
             } else if (tt == TokenType::ident) {
-                c->args.push_back(CallArg(parseCall(s)));
+                c->args.push_back(CallArg(std::unique_ptr<Call>(parseCall(s))));
             } else {
                 throw runtime_error("expected call arg");
             }

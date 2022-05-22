@@ -2,6 +2,7 @@
 #define PARSE_HPP
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -34,11 +35,11 @@ public:
     CallArg() = default;
     CallArg(unsigned char i): type(CallArgType::cat_chr_imm), imm(i) { }
     CallArg(int ind): type(CallArgType::cat_chr_var), index(ind) { }
-    CallArg(Call *c): type(CallArgType::cat_call), call(c) { }
+    CallArg(std::unique_ptr c): type(CallArgType::cat_call), call(std::move(c)) { }
     CallArgType type;
     int index;
     unsigned char imm;
-    Call *call;
+    std::unique_ptr<Call> call;
 };
 
 enum CallType {
@@ -73,7 +74,7 @@ public:
 class Action {
 public:
     std::vector<Primitive> primitives;
-    Call *call;
+    std::unique_ptr<Call> call;
 };
 
 class Branch {
