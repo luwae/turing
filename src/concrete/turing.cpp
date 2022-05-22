@@ -10,13 +10,18 @@ using std::ifstream; using std::stringstream;
 using parse::Parser;
 using std::string;
 
-int main() {
-    ifstream file("../../machines/concrete.atm");
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        cout << "usage: turing <machine file> <tape input>" << endl;
+        return -1;
+    }
+
+    ifstream file(argv[1]);
     stringstream ss;
     ss << file.rdbuf();
     string input = ss.str();
 
-    cout << "file contents:\n";
+    cout << "raw machine:\n";
     cout << input << endl;
    
     TuringMachine tm;
@@ -25,7 +30,7 @@ int main() {
 
     cout << tm << endl;
 
-    Tape t("101011");
+    Tape t(argv[2]);
     tm.print(t);
     cout << endl;
     while (!tm.isDone()) {
