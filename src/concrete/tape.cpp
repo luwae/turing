@@ -14,17 +14,6 @@ unsigned char &Tape::operator[](int index) {
     return left[index];
 }
 
-/*
-unsigned char &Tape::operator[](int index) {
-    std::vector<unsigned char> &v = (index >= 0) ? right : left;
-    if (index < 0)
-        index = -index - 1;
-    if (index >= v.size())
-        v.insert(v.end(), index - v.size() + 1, '_');
-    return v[index];
-}
-*/
-
 ostream &operator<<(ostream &os, const Tape &t) {
     for (auto i = t.left.rbegin(); i != t.left.rend(); ++i)
         os << *i;

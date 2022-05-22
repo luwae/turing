@@ -95,19 +95,27 @@ std::ostream &operator<<(std::ostream &os, const Action &a) {
     return os;
 }
 
+template <typename T>
+void output_csl(std::ostream &os, const T &container) {
+    int i = 0;
+    for (const auto &elem : container) {
+        os << elem;
+        if (++i != container.size())
+            os << ", ";
+    }
+}
+
 std::ostream &operator<<(std::ostream &os, const Branch &b) {
     os << "[";
-    for (unsigned char c : b.chars)
-        os << "'" << c << "', ";
+    output_csl(os, b.chars);
     os << "]: " << b.action;
     return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const State &s) {
     os << "State::" << s.name << "(";
-    for (const auto &b : s.branches)
-        os << b << ", ";
-    os << "default=" << s.deflt << ")";
+    output_csl(os, s.branches);
+    os << ", default=" << s.deflt << ")";
     return os;
 }
 
@@ -116,50 +124,3 @@ std::ostream &operator<<(std::ostream &os, const TuringMachine &tm) {
         os << s << "\n";
     return os;
 }
-
-#ifdef MACHINE_DEBUG
-int main() {
-    State mvr;
-    mvr.name = "mvr";
-    Branch mvr_01;
-    mvr_01.chars.insert('0');
-    mvr_01.chars.insert('1');
-    mvr_01.action.primitives.emplace_back(PrimitiveType::pt_mover, 0);
-    mvr_01.action.next = "mvr";
-    mvr.branches.push_back(mvr_01);
-    mvr.deflt.primitives.emplace_back(PrimitiveType::pt_movel, 0);
-    mvr.deflt.next = "mvl";
-
-    State mvl;
-    mvl.name = "mvl";
-    Branch mvl_1;
-    mvl_1.chars.insert('1');
-    mvl_1.action.primitives.emplace_back(PrimitiveType::pt_print, '0');
-    mvl_1.action.primitives.emplace_back(PrimitiveType::pt_movel, 0);
-    mvl_1.action.next = "mvl";
-    mvl.branches.push_back(mvl_1);
-    mvl.deflt.primitives.emplace_back(PrimitiveType::pt_print, '1');
-    mvl.deflt.next = "end";
-
-    State end;
-    end.name = "end";
-
-    TuringMachine tm;
-    tm.states.push_back(mvr);
-    tm.states.push_back(mvl);
-    tm.states.push_back(end);
-    tm.statemap.insert({"mvr", 0});
-    tm.statemap.insert({"mvl", 1});
-    tm.statemap.insert({"end", 2});
-
-    Tape t("101011");
-
-    tm.print(t);
-    cout << endl;
-    while (!tm.done) {
-        tm.step(t);
-        tm.print(t);
-        cout << endl;
-    }
-}
-#endif // MACHINE_DEBUG
