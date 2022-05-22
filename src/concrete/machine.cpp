@@ -72,6 +72,52 @@ void TuringMachine::print(const Tape &t) const {
 
 }
 
+std::ostream &operator<<(std::ostream &os, const Primitive &p) {
+    switch(p.type) {
+    case PrimitiveType::pt_movel:
+        os << "<";
+        break;
+    case PrimitiveType::pt_mover:
+        os << ">";
+        break;
+    case PrimitiveType::pt_print:
+        os << "='" << p.chr << "'";
+        break;
+    }
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const Action &a) {
+    os << "Action(";
+    for (const auto &p : a.primitives)
+        os << p;
+    os << ", " << a.next << ")";
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const Branch &b) {
+    os << "[";
+    for (unsigned char c : b.chars)
+        os << "'" << c << "', ";
+    os << "]: " << b.action;
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const State &s) {
+    os << "State::" << s.name << "(";
+    for (const auto &b : s.branches)
+        os << b << ", ";
+    os << "default=" << s.deflt << ")";
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const TuringMachine &tm) {
+    for (const auto &s : tm.states)
+        os << s << "\n";
+    return os;
+}
+
+#ifdef MACHINE_DEBUG
 int main() {
     State mvr;
     mvr.name = "mvr";
@@ -116,3 +162,4 @@ int main() {
         cout << endl;
     }
 }
+#endif // MACHINE_DEBUG
