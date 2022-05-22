@@ -69,7 +69,6 @@ void TuringMachine::print(const Tape &t) const {
         cout << "|\n";
     }
     cout << t << "\n";
-
 }
 
 std::ostream &operator<<(std::ostream &os, const Primitive &p) {
@@ -97,7 +96,7 @@ std::ostream &operator<<(std::ostream &os, const Action &a) {
 
 template <typename T>
 void output_csl(std::ostream &os, const T &container) {
-    int i = 0;
+    typename T::size_type i = 0;
     for (const auto &elem : container) {
         os << elem;
         if (++i != container.size())
