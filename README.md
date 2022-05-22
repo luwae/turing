@@ -10,10 +10,11 @@ Planned features:
     + language grammar
     + compiler
     + runtime
+    + interpreter
 
 Finished features:
  * abstract turing machines
     + language grammar
  * concrete turing machines
     + language grammar
-    + runtime
+    + interpreter
