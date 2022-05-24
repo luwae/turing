@@ -35,7 +35,7 @@ public:
     CallArg() = default;
     CallArg(unsigned char i): type(CallArgType::cat_chr_imm), imm(i) { }
     CallArg(int ind): type(CallArgType::cat_chr_var), index(ind) { }
-    CallArg(std::unique_ptr c): type(CallArgType::cat_call), call(std::move(c)) { }
+    CallArg(std::unique_ptr<Call> c): type(CallArgType::cat_call), call(std::move(c)) { }
     CallArgType type;
     int index;
     unsigned char imm;
@@ -53,6 +53,14 @@ public:
     int index;
     std::string name;
     std::vector<CallArg> args;
+    std::unique_ptr<Call> duplicate() {
+        Call *c = std::make_unique<Call>();
+        c->type = this->type;
+        c->name = this->name;
+        for (const auto &ca : this->args) {
+            c->args.push_pack(ca);
+        }
+    }
 };
 
 enum PrimitiveType {

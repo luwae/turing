@@ -1,8 +1,8 @@
-end { }
-
 main {
   fr('#', p('!', end))
 }
+
+end { }
 
 p($a, E) {
   =$a E
