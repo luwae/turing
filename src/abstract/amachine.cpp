@@ -1,12 +1,24 @@
+#include <stdexcept>
+
 #include "amachine.hpp"
 
 using std::string;
 using std::ostream;
 using std::unique_ptr; using std::make_unique;
+using std::set;
+using std::runtime_error;
 
 CallArg::CallArg(const CallArg &that): type(that.type), index(that.index), imm(that.imm), call(nullptr) {
     if (that.call)
         call = make_unique<Call>(*(that.call));
+}
+
+CallArg &CallArg::operator=(const CallArg &that) {
+    type = that.type;
+    index = that.index;
+    imm = that.imm;
+    call = (that.call) ? make_unique<Call>(*(that.call)) : nullptr;
+    return *this;
 }
 
 void CallArg::apply_chr(int arg_ind, unsigned char imm) {
@@ -53,6 +65,12 @@ Action::Action(const Action &that): primitives(that.primitives), call(nullptr) {
         call = make_unique<Call>(*(that.call));
 }
 
+Action &Action::operator=(const Action &that) {
+    primitives = that.primitives;
+    call = (that.call) ? make_unique<Call>(*(that.call)) : nullptr;
+    return *this;
+}
+
 void Action::apply_chr(int arg_ind, unsigned char imm) {
     for (auto &p : primitives)
         p.apply_chr(arg_ind, imm);
@@ -77,17 +95,41 @@ void Branch::apply_state(int arg_ind, const string &name) {
     action.apply_state(arg_ind, name);
 }
 
-void State::apply_chr(int arg_ind, unsigned char imm) {
+void State::apply_chr(unsigned char imm) {
+    if (applied == args.size())
+        throw runtime_error("all arguments already applied");
+    if (args[applied].type != StateArg::Type::sat_chr_var)
+        throw runtime_error("try to replace char arg with state");
     for (auto &b : branches)
-        b.apply_chr(arg_ind, imm);
-    deflt.apply_chr(arg_ind, imm);
+        b.apply_chr(applied, imm);
+    deflt.apply_chr(applied, imm);
+    ++applied;
 }
 
-void State::apply_state(int arg_ind, const std::string &name) {
+void State::apply_state(const std::string &name) {
+    if (applied == args.size())
+        throw runtime_error("all arguments already applied");
+    if (args[applied].type != StateArg::Type::sat_state_var)
+        throw runtime_error("try to replace state arg with char");
     for (auto &b : branches)
-        b.apply_state(arg_ind, name);
-    deflt.apply_state(arg_ind, name);
+        b.apply_state(applied, name);
+    deflt.apply_state(applied, name);
+    ++applied;
 }
+
+string State::rname() {
+    string s = name;
+    // TODO
+    return s;
+}
+
+void State::expand(ostream &os, set<string> exp) {
+    if (applied != args.size())
+        throw runtime_error("not fully substituted");
+    // TODO
+}
+
+
 
 template <typename T>
 void output_csl(std::ostream &os, const T &container, const string &before, const string &after) {
@@ -153,9 +195,18 @@ ostream &operator<<(ostream &os, const Branch &b) {
 }
 
 ostream &operator<<(ostream &os, const State &s) {
-    os << s.name << "(";
-    output_csl(os, s.args, "(", ")");
-    os << ", ";
+    os << s.name;
+    if (s.applied != s.args.size()) {
+        os << "(";
+        int i = 0;
+        for (auto it = s.args.begin() + s.applied; it != s.args.end(); ++it) {
+            os << *it;
+            if (++i != s.args.size() - s.applied)
+                os << ", ";
+        }
+        os << ")";
+    }
+    os << "(";
     output_csl(os, s.branches, "{", "}");
     os << ", ";
     os << s.deflt << ")";

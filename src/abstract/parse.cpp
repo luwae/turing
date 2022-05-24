@@ -38,7 +38,7 @@ void Parser::parseStateargs(State &state) {
     while (true) {
         TokenType tt = lx.toktype();
         if (tt == TokenType::ident) {
-           state.args.emplace_back(StateArg::Type::sat_state_var, lx.substring());
+            state.args.emplace_back(StateArg::Type::sat_state_var, lx.substring());
             lx.lex();
         } else if (tt == TokenType::chr_var) {
             lx.lex();

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -13,8 +14,12 @@ public:
         sat_state_var
     };
     StateArg(Type t, std::string n): type(t), name(n) { }
-    const Type type;
-    const std::string name;
+    StateArg() = default;
+    StateArg(const StateArg &that) = default;
+    StateArg &operator=(const StateArg &that) = default;
+    StateArg &operator=(StateArg &&that) = default;
+    Type type;
+    std::string name;
 };
 
 class Call;
@@ -32,6 +37,8 @@ public:
     CallArg() = default;
     CallArg(const CallArg &that);
     CallArg(CallArg &&that) = default;
+    CallArg &operator=(const CallArg &that);
+    CallArg &operator=(CallArg &&that) = default;
     Type type;
     int index;
     unsigned char imm;
@@ -49,6 +56,8 @@ public:
     Call() = default;
     Call(const Call &that) = default;
     Call(Call &&that) = default;
+    Call &operator=(const Call &that) = default;
+    Call &operator=(Call &&that) = default;
     Type type;
     int index;
     std::string name;
@@ -70,6 +79,8 @@ public:
     Primitive() = default;
     Primitive(const Primitive &that) = default;
     Primitive(Primitive &&that) = default;
+    Primitive &operator=(const Primitive &that) = default;
+    Primitive &operator=(Primitive &&that) = default;
     Type type;
     CallArg arg;
     void apply_chr(int arg_ind, unsigned char imm);
@@ -80,6 +91,8 @@ public:
     Action() = default;
     Action(const Action &that);
     Action(Action &&that) = default;
+    Action &operator=(const Action &that);
+    Action &operator=(Action &&that) = default;
     std::vector<Primitive> primitives;
     std::unique_ptr<Call> call;
     void apply_chr(int arg_ind, unsigned char imm);
@@ -91,6 +104,8 @@ public:
     Branch() = default;
     Branch(const Branch &that) = default;
     Branch(Branch &&that) = default;
+    Branch &operator=(const Branch &that) = default;
+    Branch &operator=(Branch &&that) = default;
     std::vector<CallArg> chars;
     Action action;
     void apply_chr(int arg_ind, unsigned char imm);
@@ -102,12 +117,17 @@ public:
     State() = default;
     State(const State &that) = default;
     State(State &&that) = default;
+    State &operator=(const State &that) = default;
+    State &operator=(State &&that) = default;
     std::string name;
     std::vector<StateArg> args;
+    int applied = 0; // TODO need to store substituted arguments
     std::vector<Branch> branches;
     Action deflt;
-    void apply_chr(int arg_ind, unsigned char imm);
-    void apply_state(int arg_ind, const std::string &name);
+    void apply_chr(unsigned char imm);
+    void apply_state(const std::string &name);
+    std::string rname();
+    void expand(std::ostream &os, std::set<std::string> exp);
 };
 
 std::ostream &operator<<(std::ostream &os, const StateArg &sa);

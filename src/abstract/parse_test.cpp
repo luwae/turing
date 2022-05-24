@@ -25,9 +25,15 @@ int main() {
     for (const auto &s: ps.states)
         cout << s << endl;
 
+    State p(ps.states[2]);
     State fr(ps.states[3]);
-    fr.apply_chr(0, '?');
-    fr.apply_state(1, "XXX");
+    p.apply_chr('?');
+    cout << p << endl;
+    p.apply_state("XXX");
+    cout << p << endl;
+    fr.apply_chr('?');
+    cout << fr << endl;
+    fr.apply_state("XXX");
     cout << fr << endl;
 
     for (const auto &s: ps.states)
