@@ -7,7 +7,7 @@
 
 using std::cout; using std::endl;
 using std::ifstream; using std::stringstream;
-using parse::Parser; using parse::State;
+using parse::Parser;
 using std::string;
 
 int main() {
@@ -21,6 +21,14 @@ int main() {
    
     Parser ps(input);
     cout << "finished parsing" << endl;
+
+    for (const auto &s: ps.states)
+        cout << s << endl;
+
+    State fr(ps.states[3]);
+    fr.apply_chr(0, '?');
+    fr.apply_state(1, "XXX");
+    cout << fr << endl;
 
     for (const auto &s: ps.states)
         cout << s << endl;
