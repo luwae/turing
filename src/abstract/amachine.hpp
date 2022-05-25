@@ -112,6 +112,19 @@ public:
     void apply_state(int arg_ind, const std::string &name);
 };
 
+class Substitute {
+public:
+    Substitute() = default;
+    Substitute(const Substitute &that);
+    Substitute(Substitute &&that) = default;
+    Substitute &operator=(const Substitute &that);
+    Substitute &operator=(Substitute &&that) = default;
+    Substitute(unsigned char i, std::unique_ptr<Call> c):
+        imm(i), call(std::move(c)) {}
+    unsigned char imm;
+    std::unique_ptr<Call> call;
+};
+
 class State {
 public:
     State() = default;
@@ -121,13 +134,12 @@ public:
     State &operator=(State &&that) = default;
     std::string name;
     std::vector<StateArg> args;
-    int applied = 0; // TODO need to store substituted arguments
+    std::vector<Substitute> subs;
     std::vector<Branch> branches;
     Action deflt;
     void apply_chr(unsigned char imm);
-    void apply_state(const std::string &name);
+    void apply_state(std::unique_ptr<Call> call);
     std::string rname();
-    void expand(std::ostream &os, std::set<std::string> exp);
 };
 
 std::ostream &operator<<(std::ostream &os, const StateArg &sa);

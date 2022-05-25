@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <sstream>
 
 #include "amachine.hpp"
 
@@ -7,6 +8,7 @@ using std::ostream;
 using std::unique_ptr; using std::make_unique;
 using std::set;
 using std::runtime_error;
+using std::ostringstream;
 
 CallArg::CallArg(const CallArg &that): type(that.type), index(that.index), imm(that.imm), call(nullptr) {
     if (that.call)
@@ -95,53 +97,81 @@ void Branch::apply_state(int arg_ind, const string &name) {
     action.apply_state(arg_ind, name);
 }
 
-void State::apply_chr(unsigned char imm) {
-    if (applied == args.size())
-        throw runtime_error("all arguments already applied");
-    if (args[applied].type != StateArg::Type::sat_chr_var)
-        throw runtime_error("try to replace char arg with state");
-    for (auto &b : branches)
-        b.apply_chr(applied, imm);
-    deflt.apply_chr(applied, imm);
-    ++applied;
+Substitute::Substitute(const Substitute &that): imm(that.imm), call(nullptr) { 
+    if (that.call)
+        call = make_unique<Call>(*(that.call));
 }
 
-void State::apply_state(const std::string &name) {
-    if (applied == args.size())
+Substitute &Substitute::operator=(const Substitute &that) {
+    imm = that.imm;
+    call = (that.call) ? make_unique<Call>(*(that.call)) : nullptr;
+    return *this;
+}
+
+void State::apply_chr(unsigned char imm) {
+    if (subs.size() == args.size())
         throw runtime_error("all arguments already applied");
-    if (args[applied].type != StateArg::Type::sat_state_var)
+    if (args[subs.size()].type != StateArg::Type::sat_chr_var)
+        throw runtime_error("try to replace char arg with state");
+    for (auto &b : branches)
+        b.apply_chr(subs.size(), imm);
+    deflt.apply_chr(subs.size(), imm);
+    subs.emplace_back(imm, nullptr);
+}
+
+void State::apply_state(unique_ptr<Call> call) {
+    if (subs.size() == args.size())
+        throw runtime_error("all arguments already applied");
+    if (args[subs.size()].type != StateArg::Type::sat_state_var)
         throw runtime_error("try to replace state arg with char");
     for (auto &b : branches)
-        b.apply_state(applied, name);
-    deflt.apply_state(applied, name);
-    ++applied;
+        b.apply_state(subs.size(), call->name);
+    deflt.apply_state(subs.size(), call->name);
+    subs.emplace_back(0, std::move(call));
+}
+
+ostream &xchr(ostream &os, unsigned char imm) {
+    os << "'x";
+    static const string hexchars = "0123456789abcdef";
+    os << hexchars[imm >> 4];
+    os << hexchars[imm & 0x0f];
+    os << "'";
+    return os;
 }
 
 string State::rname() {
-    string s = name;
-    // TODO
-    return s;
+    if (args.size() != subs.size())
+        throw runtime_error("state is not fully substituted");
+    
+    if (args.size() == 0)
+        return name;
+    
+    ostringstream os;
+    os << name << "(";
+    for (int i = 0; i != args.size(); ++i) {
+        if (args[i].type == StateArg::Type::sat_chr_var)
+            xchr(os, subs[i].imm);
+        else
+            os << *(subs[i].call);
+        if (i != args.size() - 1)
+            os << ",";
+    }
+    os << ")";
+    return os.str();
 }
-
-void State::expand(ostream &os, set<string> exp) {
-    if (applied != args.size())
-        throw runtime_error("not fully substituted");
-    // TODO
-}
-
-
 
 template <typename T>
-void output_csl(std::ostream &os, const T &container, const string &before, const string &after) {
+ostream &output_csl(std::ostream &os, const T &container, const string &before, const string &after) {
     typename T::size_type i = 0;
 
     os << before;
     for (const auto &elem : container) {
         os << elem;
         if (++i != container.size())
-            os << ", ";
+            os << ",";
     }
     os << after;
+    return os;
 }
 
 ostream &operator<<(ostream &os, const StateArg &sa) {
@@ -154,9 +184,9 @@ ostream &operator<<(ostream &os, const StateArg &sa) {
 ostream &operator<<(ostream &os, const CallArg &ca) {
     if (ca.type == CallArg::Type::cat_chr_var)
         os << "$<" << ca.index << ">";
-    else if (ca.type == CallArg::Type::cat_chr_imm)
-        os << "'" << ca.imm << "'";
-    else
+    else if (ca.type == CallArg::Type::cat_chr_imm) {
+        xchr(os, ca.imm);
+    } else
         os << *(ca.call);
     return os;
 }
@@ -196,16 +226,8 @@ ostream &operator<<(ostream &os, const Branch &b) {
 
 ostream &operator<<(ostream &os, const State &s) {
     os << s.name;
-    if (s.applied != s.args.size()) {
-        os << "(";
-        int i = 0;
-        for (auto it = s.args.begin() + s.applied; it != s.args.end(); ++it) {
-            os << *it;
-            if (++i != s.args.size() - s.applied)
-                os << ", ";
-        }
-        os << ")";
-    }
+    if (s.args.size() > 0)
+        output_csl(os, s.args, "(", ")");
     os << "(";
     output_csl(os, s.branches, "{", "}");
     os << ", ";
