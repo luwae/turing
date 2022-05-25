@@ -44,7 +44,7 @@ public:
     unsigned char imm;
     std::unique_ptr<Call> call;
     void apply_chr(int arg_ind, unsigned char imm);
-    void apply_state(int arg_ind, const std::string &name);
+    void apply_state(int arg_ind, const Call &newcall);
 };
 
 class Call {
@@ -63,7 +63,7 @@ public:
     std::string name;
     std::vector<CallArg> args;
     void apply_chr(int arg_ind, unsigned char imm);
-    void apply_state(int arg_ind, const std::string &name);
+    void apply_state(int arg_ind, const Call &newcall);
 };
 
 class Primitive {
@@ -96,7 +96,7 @@ public:
     std::vector<Primitive> primitives;
     std::unique_ptr<Call> call;
     void apply_chr(int arg_ind, unsigned char imm);
-    void apply_state(int arg_ind, const std::string &name);
+    void apply_state(int arg_ind, const Call &newcall);
 };
 
 class Branch {
@@ -109,7 +109,7 @@ public:
     std::vector<CallArg> chars;
     Action action;
     void apply_chr(int arg_ind, unsigned char imm);
-    void apply_state(int arg_ind, const std::string &name);
+    void apply_state(int arg_ind, const Call &newcall);
 };
 
 class Substitute {
@@ -138,8 +138,9 @@ public:
     std::vector<Branch> branches;
     Action deflt;
     void apply_chr(unsigned char imm);
-    void apply_state(std::unique_ptr<Call> call);
-    std::string rname();
+    void apply_state(const Call &newcall);
+    std::string rname() const;
+    void expand(std::ostream &os, const std::vector<State> &states, std::set<std::string> &rstates);
 };
 
 std::ostream &operator<<(std::ostream &os, const StateArg &sa);

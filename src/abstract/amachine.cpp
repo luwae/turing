@@ -9,6 +9,7 @@ using std::unique_ptr; using std::make_unique;
 using std::set;
 using std::runtime_error;
 using std::ostringstream;
+using std::vector;
 
 CallArg::CallArg(const CallArg &that): type(that.type), index(that.index), imm(that.imm), call(nullptr) {
     if (that.call)
@@ -34,9 +35,10 @@ void CallArg::apply_chr(int arg_ind, unsigned char imm) {
     }
 }
 
-void CallArg::apply_state(int arg_ind, const string &name) {
-    if (type == cat_call && call)
-        call->apply_state(arg_ind, name);
+void CallArg::apply_state(int arg_ind, const Call &newcall) {
+    if (type == cat_call && call && call->type == Call::Type::ct_state_var &&
+            call->index == arg_ind)
+        call = make_unique<Call>(newcall);
 }
 
 void Call::apply_chr(int arg_ind, unsigned char imm) {
@@ -44,15 +46,9 @@ void Call::apply_chr(int arg_ind, unsigned char imm) {
         ca.apply_chr(arg_ind, imm);
 }
 
-void Call::apply_state(int arg_ind, const string &name) {
-    if (type == ct_state_var) {
-        if (arg_ind == index) {
-            type = ct_state_imm;
-            this->name = name;
-        }
-    }
+void Call::apply_state(int arg_ind, const Call &newcall) {
     for (auto &ca : args) {
-        ca.apply_state(arg_ind, name);
+        ca.apply_state(arg_ind, newcall);
     }
 }
 
@@ -80,9 +76,11 @@ void Action::apply_chr(int arg_ind, unsigned char imm) {
         call->apply_chr(arg_ind, imm);
 }
 
-void Action::apply_state(int arg_ind, const string &name) {
-    if (call)
-        call->apply_state(arg_ind, name);
+void Action::apply_state(int arg_ind, const Call &newcall) {
+    if (call && call->type == Call::Type::ct_state_var && call->index == arg_ind)
+        call = make_unique<Call>(newcall);
+    else if (call && call->type == Call::Type::ct_state_imm)
+        call->apply_state(arg_ind, newcall);
 }
 
 void Branch::apply_chr(int arg_ind, unsigned char imm) {
@@ -91,10 +89,8 @@ void Branch::apply_chr(int arg_ind, unsigned char imm) {
     action.apply_chr(arg_ind, imm);
 }
 
-void Branch::apply_state(int arg_ind, const string &name) {
-    for (auto &ca : chars)
-        ca.apply_state(arg_ind, name);
-    action.apply_state(arg_ind, name);
+void Branch::apply_state(int arg_ind, const Call &newcall) {
+    action.apply_state(arg_ind, newcall);
 }
 
 Substitute::Substitute(const Substitute &that): imm(that.imm), call(nullptr) { 
@@ -119,15 +115,15 @@ void State::apply_chr(unsigned char imm) {
     subs.emplace_back(imm, nullptr);
 }
 
-void State::apply_state(unique_ptr<Call> call) {
+void State::apply_state(const Call &newcall) {
     if (subs.size() == args.size())
         throw runtime_error("all arguments already applied");
     if (args[subs.size()].type != StateArg::Type::sat_state_var)
         throw runtime_error("try to replace state arg with char");
     for (auto &b : branches)
-        b.apply_state(subs.size(), call->name);
-    deflt.apply_state(subs.size(), call->name);
-    subs.emplace_back(0, std::move(call));
+        b.apply_state(subs.size(), newcall);
+    deflt.apply_state(subs.size(), newcall);
+    subs.emplace_back(0, make_unique<Call>(newcall));
 }
 
 ostream &xchr(ostream &os, unsigned char imm) {
@@ -139,16 +135,13 @@ ostream &xchr(ostream &os, unsigned char imm) {
     return os;
 }
 
-string State::rname() {
-    if (args.size() != subs.size())
-        throw runtime_error("state is not fully substituted");
-    
+string State::rname() const {
     if (args.size() == 0)
         return name;
     
     ostringstream os;
     os << name << "(";
-    for (int i = 0; i != args.size(); ++i) {
+    for (int i = 0; i != subs.size(); ++i) {
         if (args[i].type == StateArg::Type::sat_chr_var)
             xchr(os, subs[i].imm);
         else
@@ -156,19 +149,59 @@ string State::rname() {
         if (i != args.size() - 1)
             os << ",";
     }
+    for (int i = subs.size(); i != args.size(); ++i) {
+        os << args[i];
+        if (i != args.size() - 1)
+            os << ",";
+    }
     os << ")";
     return os.str();
 }
 
+void resolve_call(const Call &call, ostream &os, const vector<State> &states, set<string> &rstates) {
+    const State *sp = nullptr;
+    for (auto &s : states)
+        if (s.name == call.name)
+            sp = &s;
+    if (!sp)
+        throw runtime_error("state name to expand not found");
+    State statecopy = *sp;
+    for (const auto &ca : call.args) {
+        if (ca.type == CallArg::Type::cat_chr_imm)
+            statecopy.apply_chr(ca.imm);
+        else if (ca.type == CallArg::Type::cat_call)
+            statecopy.apply_state(*(ca.call));
+        else
+            throw runtime_error("unexpected unresolved char");
+    }
+    statecopy.expand(os, states, rstates);
+}
+
+void State::expand(ostream &os, const vector<State> &states, set<string> &rstates) {
+    if (args.size() != subs.size())
+        throw runtime_error("state is not fully substituted");
+    string rn = rname();
+    if (rstates.find(rn) != rstates.end())
+        return;
+    rstates.insert(rn);
+    os << *this << "\n";
+
+    for (auto &b : branches)
+        if (b.action.call)
+            resolve_call(*(b.action.call), os, states, rstates);
+    if (deflt.call)
+        resolve_call(*(deflt.call), os, states, rstates);
+}
+
 template <typename T>
-ostream &output_csl(std::ostream &os, const T &container, const string &before, const string &after) {
+ostream &output_csl(std::ostream &os, const T &container, const string &before, const string &mid, const string &after) {
     typename T::size_type i = 0;
 
     os << before;
     for (const auto &elem : container) {
         os << elem;
         if (++i != container.size())
-            os << ",";
+            os << mid;
     }
     os << after;
     return os;
@@ -196,7 +229,8 @@ ostream &operator<<(ostream &os, const Call &c) {
         os << "<" << c.index << ">";
     else
         os << c.name;
-    output_csl(os, c.args, "(", ")");
+    if (c.args.size() > 0)
+        output_csl(os, c.args, "(", ",", ")");
     return os;
 }
 
@@ -219,18 +253,17 @@ ostream &operator<<(ostream &os, const Action &a) {
 }
 
 ostream &operator<<(ostream &os, const Branch &b) {
-    output_csl(os, b.chars, "[", "]");
+    output_csl(os, b.chars, "[", ",", "]");
     os << " " << b.action;
     return os;
 }
 
 ostream &operator<<(ostream &os, const State &s) {
-    os << s.name;
-    if (s.args.size() > 0)
-        output_csl(os, s.args, "(", ")");
-    os << "(";
-    output_csl(os, s.branches, "{", "}");
-    os << ", ";
-    os << s.deflt << ")";
+    os << s.rname() << " {\n";
+    if (s.branches.size() > 0)
+        output_csl(os, s.branches, "  ", "\n  ", "\n");
+    if (s.deflt.call)
+        os << "  " << s.deflt << "\n";
+    os << "}";
     return os;
 }
