@@ -15,7 +15,7 @@ using std::unique_ptr; using std::make_unique;
 using std::set;
 
 int main() {
-    ifstream file("../../machines/simple.atm");
+    ifstream file("../../machines/2.atm");
     stringstream ss;
     ss << file.rdbuf();
     string input = ss.str();
@@ -27,7 +27,8 @@ int main() {
     cout << "finished parsing" << endl;
 
     for (const auto &s: ps.states)
-        cout << s << endl << endl << endl;
+        cout << s << "\n";
+    cout << "\n\n\n" << endl;
     
     State maincopy = ps.states[0];
     set<string> rnames;

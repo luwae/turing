@@ -39,6 +39,8 @@ void CallArg::apply_state(int arg_ind, const Call &newcall) {
     if (type == cat_call && call && call->type == Call::Type::ct_state_var &&
             call->index == arg_ind)
         call = make_unique<Call>(newcall);
+    else if (type == cat_call && call && call->type == Call::Type::ct_state_imm)
+        call->apply_state(arg_ind, newcall);
 }
 
 void Call::apply_chr(int arg_ind, unsigned char imm) {

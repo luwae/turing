@@ -1,0 +1,93 @@
+main {
+    rfr('#', l(subst(r(rfr('#', l(add(end)))))))
+}
+
+end {}
+
+l(E) {
+  < E
+}
+
+r(E) {
+  > E
+}
+
+fl($a, E) {
+  [$a] E
+  < fl($a, E)
+}
+
+fr($a, E) {
+  [$a] E
+  > fr($a, E)
+}
+
+lfl($a, E) {
+  < fl($a, E)
+}
+
+rfr($a, E) {
+  > fr($a, E)
+}
+
+fl2($a, $b, E) {
+  [$a, $b] E
+  < fl2($a, $b, E)
+}
+
+fr2($a, $b, E) {
+  [$a, $b] E
+  > fr2($a, $b, E)
+}
+
+lfl2($a, $b, E) {
+  < fl2($a, $b, E)
+}
+
+rfr2($a, $b, E) {
+  > fr2($a, $b, E)
+}
+
+subst(E) {
+  ['0'] ='a' E
+  ['1'] ='b' E
+  E
+}
+
+resubst(E) {
+  ['a'] ='0' E
+  ['b'] ='1' E
+  E
+}
+
+add(E) {
+  ['0'] ='a' lfl2('a', 'b', resubst(l(add2(E))))
+  ['1'] ='b' lfl2('a', 'b', add1(E))
+  E
+}
+
+add1(E) {
+  ['a'] ='1' < add2(E)
+  ['b'] ='0' < add3(E)
+}
+
+add2(E) {
+    ['#'] fr2('a', 'b', resubst(fl('#', E)))
+    subst(rfr2('a', 'b', resubst(l(add(E)))))
+}
+
+add3(E) {
+  ['0'] ='b' rfr2('a', 'b', resubst(l(add(E))))
+  ['1'] ='a' < add4(E)
+  fr2('a', 'b', resubst(fl('#', E)))
+}
+
+add4(E) {
+  ['0'] ='1' add5(E)
+  ['1'] ='0' < add4(E)
+  add5(E)
+}
+
+add5(E) {
+  fr2('a', 'b', rfr2('a', 'b', resubst(l(add(E)))))
+}
