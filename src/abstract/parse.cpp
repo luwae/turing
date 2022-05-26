@@ -185,11 +185,15 @@ unique_ptr<Call> Parser::parseCall(State &s) {
     if (index == -1) {
         c->type = Call::Type::ct_state_imm;
         c->name = name;
+        lx.lex();
     } else {
         c->type = Call::Type::ct_state_var;
         c->index = index;
+        lx.lex();
+        return c;
+        // do not allow passing arguments to variable states.
+        // we do this because they may already have arguments passed to them after substitution.
     }
-    lx.lex();
 
     if (lx.toktype() == TokenType::lpar) {
         lx.lex();
