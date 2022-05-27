@@ -17,6 +17,9 @@ void Parser::parse() {
             throw runtime_error("expected state name");
         }
         string name = lx.substring();
+
+        std::cout << "parsing state " << name << std::endl;
+
         lx.lex();
         for (const auto &s : states)
             if (s.name == name)

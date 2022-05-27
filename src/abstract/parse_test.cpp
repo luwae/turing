@@ -15,7 +15,7 @@ using std::unique_ptr; using std::make_unique;
 using std::set;
 
 int main() {
-    ifstream file("../../machines/2.atm");
+    ifstream file("../../machines/stackmachine.atm");
     stringstream ss;
     ss << file.rdbuf();
     string input = ss.str();

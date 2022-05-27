@@ -1,47 +1,71 @@
-r(E) {
-    > E
+main {
+    unpop(unpop(umul(end)))
 }
 
+end {}
+
 l(E) {
-    < E
+  < E
+}
+
+r(E) {
+  > E
 }
 
 p($a, E) {
-    =$a E
-}
-
-if($a, E, D) {
-    [$a] E
-    D
-}
-
-if2($a, A, $b, B, D) {
-    [$a] A
-    [$b] B
-    D
+  =$a E
 }
 
 fl($a, E) {
-    [$a] E
-    < fl($a, E)
-}
-
-lfl($a, E) {
-    < fl($a, E)
+  [$a] E
+  < fl($a, E)
 }
 
 fr($a, E) {
-    [$a] E
-    > fr($a, E)
+  [$a] E
+  > fr($a, E)
+}
+
+lfl($a, E) {
+  < fl($a, E)
 }
 
 rfr($a, E) {
-    > fr($a, E))
+  > fr($a, E)
+}
+
+fl2($a, $b, E) {
+  [$a, $b] E
+  < fl2($a, $b, E)
+}
+
+fr2($a, $b, E) {
+  [$a, $b] E
+  > fr2($a, $b, E)
+}
+
+lfl2($a, $b, E) {
+  < fl2($a, $b, E)
+}
+
+rfr2($a, $b, E) {
+  > fr2($a, $b, E)
 }
 
 frcascade($a, $b, E) {
-    [$a] E
-    =$b > frcascade($a, $b, E)
+  [$a] E
+  =$b > frcascade($a, $b, E)
+}
+
+if($a, A, E) {
+  [$a] A
+  E
+}
+
+if2($a, A, $b, B, E) {
+  [$a] A
+  [$b] B
+  E
 }
 
 push($a, $b, $c, $d, $e, $f, $g, $h, E) {
@@ -58,17 +82,10 @@ inc(E) {
 
 dec(E, D) {
     < if2(
-        '0', l(dec(E, D)),
+        '0', dec(E, D),
         '1', p('0', r(frcascade('#', '1', E))),
         rfr('#', D)
       )
-}
-
-add(E) {
-    dec(
-      lfl('#', inc(rfr('#'), add(E))),
-      lfl('#', E)
-    )
 }
 
 subst(E) {
@@ -84,71 +101,108 @@ resubst(E) {
 }
 
 add(E) {
-    < fl('#', l(subst(r(rfr('#', l(add1(E)))))))
+  lfl('#', l(subst(r(rfr('#', l(add0(E)))))))
 }
 
-                 V
-#010101a1#00001111#
+add0(E) {
+  ['0'] ='a' lfl2('a', 'b', resubst(l(add2(E))))
+  ['1'] ='b' lfl2('a', 'b', add1(E))
+  E
+}
 
 add1(E) {
-    ['0'] ='a' lfl2('a', 'b', resubst(l(subst(rfr2('a', 'b', resubst(l(add1(E)))))))) 
-    ['1'] ='b' lfl2('a', 'b', add2(E))
-    
+  ['a'] ='1' < add2(E)
+  ['b'] ='0' < add3(E)
 }
 
 add2(E) {
-    ['a'] ='1' < subst(rfr2('a', 'b', resubst(l(add1(E)))))
-    ['b'] ='0' < subst(add3(E))
+  ['#'] fr2('a', 'b', resubst(fl('#', E)))
+  subst(rfr2('a', 'b', resubst(l(add0(E)))))
 }
 
 add3(E) {
-    ['0'] ='1'
+  ['0'] ='b' rfr2('a', 'b', resubst(l(add0(E))))
+  ['1'] ='a' < add4(E)
+  fr2('a', 'b', resubst(fl('#', E)))
+}
+
+add4(E) {
+  ['0'] ='1' add5(E)
+  ['1'] ='0' < add4(E)
+  add5(E)
+}
+
+add5(E) {
+  fr2('a', 'b', rfr2('a', 'b', resubst(l(add0(E)))))
 }
 
 not(E) {
     < if2(
-        '0', p('1', l(not(E))),
-        '1', p('0', l(not(E))),
+        '0', p('1', not(E)),
+        '1', p('0', not(E)),
         rfr('#', E)
       )
 }
 
+neg(E) {
+    not(inc(E))
+}
+
 sub(E) {
-    not(inc(add(E)))
+    neg(add(E))
 }
 
 pop(E) {
     lfl('#', E)
 }
 
+unpop(E) {
+    rfr('#', E)
+}
+
 ifzero(E, D) {
     < if2(
         '0', l(ifzero(E, D)),
-        '1', fr('#', D)
+        '1', fr('#', D),
         rfr('#', E)
       )
 }
 
-and1(E) {
-    if(#, E, l9(bit_and($, r8(%))))
+ifnzero(E, D) {
+    ifzero(D, E)
 }
 
-and(E) {
-    l(and1(E))
+ifneg(E, D) {
+    lfl('#', r(
+      if('1', fr('#', E), fr('#', D))
+    ))
 }
 
-bit_or(a, E) {
-    if(1, E, p(a, E))
+abs(E) {
+  ifneg(neg(E), E)
 }
 
-bit_not(E) {
-    if(0, p(1, E), p(0, E))
-}
-
-bit_xor(a, E) {
-    if(0, p(a, E), p(a, bit_not(E)))
+dup(E) {
+  > ='a' < lfl('#', r(dup1(E)))
 }
 
 dup1(E) {
-    if(#, rfr(#, rfr(#, E)), r9(p($, l10(%))))
+  ['0'] ='a' dup2('0', E)
+  ['1'] ='b' dup2('1', E)
+  fr('a', p('#', E))
+}
+
+dup2($a, E) {
+  rfr('a', p($a, r(p('a', lfl2('a', 'b', resubst(r(dup1(E))))))))
+}
+
+umul(E) {
+  dup(pop(pop(dup(pop(pop(r(frcascade('#', '0', unpop(unpop(umul1(E)))))))))))
+}
+
+umul1(E) {
+  dec(
+    pop(add(unpop(unpop(umul1(E))))),
+    pop(pop(E))
+  )
 }
