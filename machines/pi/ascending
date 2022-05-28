@@ -1,0 +1,15 @@
+strictly ascending series from Leibniz
+1 - 1/3 + 1/5 - 1/7 + 1/9 - 1/11 + ...
+\_____/   \_______/   \________/
+
+  2/3   +   2/35    +    2/99    + ...
+
+2*(1/3 + 1/35 + 1/99 + ...)
+
+def terms():
+    n = 1
+    while True:
+        yield n * (n + 2)
+        n += 4
+g = terms()
+pi = 8*sum(1/next(g) for _ in range(infinity))
