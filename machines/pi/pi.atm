@@ -1,0 +1,39 @@
+shl(E) {
+  lfl('#', r(r(shl1(E))))
+}
+
+shl1(E) {
+  ['0'] < ='0' >> shl1(E)
+  ['1'] < ='1' >> shl1(E)
+  < ='0' > E
+}
+
+
+
+cmpge(T, F) {
+  lfl('#', r(subst(l(lfl('#', r(cmpge_entry(T, F)))))))
+}
+
+cmpge_entry(T, F) {
+  ['0'] ='a' rfr2('a', 'b', cmpge_0(T, F))
+  ['1'] ='b' rfr2('a', 'b', cmpge_1(T, F))
+  rfr('#', T)
+}
+
+cmpge_redo(T, F) {
+  fl2('a', 'b', resubst(r(cmpge_entry(T, F))))
+}
+
+cmpge_leave(E)
+  fl2('a', 'b', resubst(fr('#', rfr('#', E))))
+}
+
+cmpge_0(T, F) {
+  ['a'] ='0' cmpge_redo(T, F)
+  ['b'] ='1' cmpge_leave(F)
+}
+
+cmpge_1(T, F) {
+  ['a'] ='0' cmpge_leave(T)
+  ['b'] ='1' cmpge_redo(T, F)
+}
