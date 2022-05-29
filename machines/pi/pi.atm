@@ -1,3 +1,9 @@
+step(T, F) {
+  lfl('#', shl(rfr('#', cmpge(sub(T), F))))
+}
+
+
+
 shl(E) {
   lfl('#', r(r(shl1(E))))
 }
@@ -7,8 +13,6 @@ shl1(E) {
   ['1'] < ='1' >> shl1(E)
   < ='0' > E
 }
-
-
 
 cmpge(T, F) {
   lfl('#', r(subst(l(lfl('#', r(cmpge_entry(T, F)))))))
@@ -36,4 +40,48 @@ cmpge_0(T, F) {
 cmpge_1(T, F) {
   ['a'] ='0' cmpge_leave(T)
   ['b'] ='1' cmpge_redo(T, F)
+}
+
+sub(E) {
+  lfl('#', l(subst(r(rfr('#', l(sub_entry(E)))))))
+}
+
+sub_entry(E) {
+  ['0'] ='a' lfl2('a', 'b', sub_0(E))
+  ['1'] ='b' lfl2('a', 'b', sub_1(E))
+}
+
+sub_redo(E) {
+  rfr2('a', 'b', resubst(l(sub_entry(E))))
+}
+
+sub_0(E) {
+  resubst(l(sub_0_1(E)))
+}
+
+sub_0_1(E) {
+  ['0', '1'] subst(sub_redo(E))
+  fr2('a', 'b', resubst(fr('#', E)))
+}
+
+sub_1(E) {
+  ['a'] ='1' < sub_1_ppg1(E)
+  ['b'] ='0' < sub1_1(E)
+}
+
+sub1_1(E) {
+  ['0', '1'] subst(sub_redo(E))
+  rfr2('a', 'b', resubst(fr('#', E)))
+}
+
+sub_1_ppg1(E) {
+  ['0'] ='b' < sub_1_ppg2(E)
+  ['1'] ='a' sub_redo(E)
+  rfr2('a', 'b', resubst(fr('#', E))
+}
+
+sub_1_ppg2(E) {
+  ['0'] ='1' < sub_1_ppg2(E)
+  ['1'] ='0' rfr2('a', 'b', sub_redo(E))
+  rfr2('a', 'b', sub_redo(E))
 }
