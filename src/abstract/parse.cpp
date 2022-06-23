@@ -34,6 +34,8 @@ void Parser::parse() {
     }
 }
 
+
+
 void Parser::parseStateargs(State &state) {
     if (lx.toktype() == TokenType::lcurly)
         return;
@@ -89,7 +91,6 @@ void Parser::parseStatebody(State &s) {
 unsigned char convert_immediate(const string &s) {
     if (s.length() == 1)
         return s[0];
-
     unsigned char v = 0;
     if (s[1] <= '9')
         v += (s[1] - '0') << 4;
