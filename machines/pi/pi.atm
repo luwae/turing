@@ -1,3 +1,41 @@
+               V
+%#010#011#%$n$1Aa
+      V test if $ on the right
+
+singleterm(E) {
+  fl('%', p(' ', rfr(' ', l(step(
+    r(p('%'), fr4('a', 'b', 'A', 'B', repl(calc1(move%singleterm(E))))),
+    r(p('%'), fr4('a', 'b', 'A', 'B', repl(calc0(move%singleterm(E)))))
+  )))))
+}
+
+singleterm_testend(T, F) {
+  ['$'] < ='0' T
+  F
+}
+
+repl(E) {
+ ['a', 'b'] > repl_frompos(E)
+ ['A', 'B'] > repl_fromneg(E)
+}
+
+repl_frompos(E) {
+ ['0', '_'] ='A' < E
+ ['1'] ='B' < E
+}
+
+repl_fromneg(E) {
+ ['0', '_'] ='a' < E
+ ['1'] ='b' < E
+}
+
+calc0(E) {
+ ['a', 'A'] ='0'
+ ['b', 'B'] ='1'
+}
+
+
+
 step(T, F) {
   lfl('#', shl(rfr('#', cmpge(sub(T), F))))
 }
@@ -25,21 +63,27 @@ cmpge_entry(T, F) {
 }
 
 cmpge_redo(T, F) {
-  fl2('a', 'b', resubst(r(cmpge_entry(T, F))))
+  ['0'] ='a' < fl2('a', 'b', resubst(r(cmpge_entry(T, F))))
+  ['1'] ='b' < fl2('a', 'b', resubst(r(cmpge_entry(T, F))))
+  fl2('a', 'b', resubst(fr('#', rfr('#', T))))
 }
 
 cmpge_leave(E)
   fl2('a', 'b', resubst(fr('#', rfr('#', E))))
 }
 
+cmpge_next(T, F) {
+  r(subst(l(cmpge_redo(T, F))))
+}
+
 cmpge_0(T, F) {
-  ['a'] ='0' cmpge_redo(T, F)
+  ['a'] ='0' > cmpge_redo(T, F)
   ['b'] ='1' cmpge_leave(F)
 }
 
 cmpge_1(T, F) {
   ['a'] ='0' cmpge_leave(T)
-  ['b'] ='1' cmpge_redo(T, F)
+  ['b'] ='1' > cmpge_redo(T, F)
 }
 
 sub(E) {
