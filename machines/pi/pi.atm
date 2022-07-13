@@ -3,6 +3,8 @@
       V test if $ on the right
 
 singleterm(E) {
+  ['%'] newterm + reset % + change p/n + put aA back
+  ['%'] =' ' 
   fl('%', p(' ', rfr(' ', l(step(
     r(p('%'), fr4('a', 'b', 'A', 'B', repl(calc1(move%singleterm(E))))),
     r(p('%'), fr4('a', 'b', 'A', 'B', repl(calc0(move%singleterm(E)))))
@@ -33,6 +35,34 @@ calc0(E) {
  ['a', 'A'] ='0'
  ['b', 'B'] ='1'
 }
+
+
+
+V
+_#001#011#
+   V
+___#0001#0101# #001#011#
+
+newterm(E) {
+  =' ' < ='#' >> fr(' ').l.l.newterm_rec.E
+}
+
+newterm_rec(E) {
+  ['0'] ='a' fl('_').p('0').fr(' ').fr2('a', 'b').resubst.l.newterm_rec.E
+  ['1'] ='b' fl('_').p('1').fr(' ').fr2('a', 'b').resubst.l.newterm_rec.E
+  fl('_').p('0').l.p('#').rfr('#').l.l.add_bit.lfl('#').r.r.newterm_prune.E
+}
+
+newterm_prune(E) {
+  ['0'] < ='#' < ='_' > rfr('#').l.newterm_numerator.E
+}
+
+newterm_numerator(E) {
+  ['0', '1'] subst.fl('_').p('0').fr2('a', 'b').resubst.l.newterm_numerator.E
+  < ='1' fl('_').p('#').l.p('%').E
+}
+
+
 
 
 
