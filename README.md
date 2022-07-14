@@ -1,20 +1,15 @@
 # turing
 Tools to design and run turing machines.
 
-Planned features:
+features:
  * abstract turing machines
     + language grammar
     + compiler (source-to-source)
-    + interpreter
  * concrete turing machines
     + language grammar
-    + compiler
-    + runtime
     + interpreter
 
-Finished features:
- * abstract turing machines
-    + language grammar
- * concrete turing machines
-    + language grammar
-    + interpreter
+This repository also includes runnable turing machines.
+
+machines:
+ * calculate pi to arbitrary precision
