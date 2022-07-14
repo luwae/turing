@@ -1,0 +1,16 @@
+general
+ - complete makefile
+
+abstract
+ - grammar
+    - comments
+    - dot notation to save parentheses
+ - compiler
+    - short name mode
+    - real executable instead of parse_test
+
+concrete
+ - more control over simulation
+
+machines
+ - e
