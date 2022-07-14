@@ -20,47 +20,71 @@ main {
 }
 
 end { }
-                
 
-/------------------------------/
-advance a single division and add/subtract it to the total.
-start: left of left $
- - if % here (all terms done): newterm + recursion
- - otherwise: search % and commence calculation
-/------------------------------/
-
-singleterm(E) {
-  ['%'] =' ' fl('_').newterm.fr('$').r.singleterm_changepn(
-    r.r.r.subst.rfr('a').resubst.singleterm.E,
-    r.r.r.substbig.rfr('a').resubst.singleterm.E
-  )
-
-  fl('%', p(' ', rfr(' ', p('%').l(step(
-    fr4('a', 'b', 'A', 'B', repl(calc1.fl('$').lfl('$').l.singleterm(E))),
-    fr4('a', 'b', 'A', 'B', repl(resubst.fl('$').lfl('$').l.singleterm(E)))
-  )))))
+l(E) {
+  < E
 }
 
-singleterm_changepn(P, N) {
-  ['p'] ='n' N
-  ['n'] ='p' P
+r(E) {
+  > E
 }
 
-calc1(E) {
-  ['A'] ='1' < calc1_decr.E
-  ['B'] ='0' E
-  ['a'] ='1' E
-  ['b'] ='0' < calc1_incr.E
+p($a, E) {
+  =$a E
 }
 
-calc1_decr(E) {
-  ['0'] ='1' < calc1_decr.E
-  ['1'] ='0' E
+fl($a, E) {
+  [$a] E
+  < fl($a, E)
 }
 
-calc1_incr(E) {
-  ['0'] ='1' E
-  ['1'] ='0' < calc1_incr.E
+fr($a, E) {
+  [$a] E
+  > fr($a, E)
+}
+
+lfl($a, E) {
+  < fl($a, E)
+}
+
+rfr($a, E) {
+  > fr($a, E)
+}
+
+fl2($a, $b, E) {
+  [$a, $b] E
+  < fl2($a, $b, E)
+}
+
+fr2($a, $b, E) {
+  [$a, $b] E
+  > fr2($a, $b, E)
+}
+
+lfl2($a, $b, E) {
+  < fl2($a, $b, E)
+}
+
+rfr2($a, $b, E) {
+  > fr2($a, $b, E)
+}
+
+fl4($a, $b, $c, $d, E) {
+  [$a, $b, $c, $d] E
+  < fl4($a, $b, $c, $d, E)
+}
+
+fr4($a, $b, $c, $d, E) {
+  [$a, $b, $c, $d] E
+  > fr4($a, $b, $c, $d, E)
+}
+
+lfl4($a, $b, $c, $d, E) {
+  < fl4($a, $b, $c, $d, E)
+}
+
+rfr4($a, $b, $c, $d, E) {
+  > fr4($a, $b, $c, $d, E)
 }
 
 subst(E) {
@@ -78,13 +102,39 @@ resubst(E) {
   ['b', 'B'] ='1' E
 }
 
+singleterm(E) {
+  ['%'] =' ' fl('_', newterm(fr('$', r(singleterm_changepn(
+    r(r(r(subst(rfr('a', resubst(singleterm(E))))))),
+    r(r(r(substbig(rfr('a', resubst(singleterm(E)))))))
+  )))))
 
-/------------------------------/
-  V
-$1A1
-  V
-$1Ab
-/------------------------------/
+  fl('%', p(' ', rfr(' ', p('%', l(step(
+    fr4('a', 'b', 'A', 'B', repl(calc1(fl('$', lfl('$', l(singleterm(E))))))),
+    fr4('a', 'b', 'A', 'B', repl(resubst(fl('$', lfl('$', l(singleterm(E)))))))
+  ))))))
+}
+
+singleterm_changepn(P, N) {
+  ['p'] ='n' N
+  ['n'] ='p' P
+}
+
+calc1(E) {
+  ['A'] ='1' < calc1_decr(E)
+  ['B'] ='0' E
+  ['a'] ='1' E
+  ['b'] ='0' < calc1_incr(E)
+}
+
+calc1_decr(E) {
+  ['0'] ='1' < calc1_decr(E)
+  ['1'] ='0' E
+}
+
+calc1_incr(E) {
+  ['0'] ='1' E
+  ['1'] ='0' < calc1_incr(E)
+}
 
 repl(E) {
  ['a', 'b'] > repl_frompos(E)
@@ -101,48 +151,30 @@ repl_fromneg(E) {
  ['1'] ='b' < E
 }
 
-
-
-/------------------------------/
-               V
-________________#001#011#
-   V
-___%#0001#0101# #001#011#
-/------------------------------/
-
 newterm(E) {
-  =' ' < ='#' >> fr(' ').l.l.newterm_rec.E
+  =' ' < ='#' >> fr(' ', l(l(newterm_rec(E))))
 }
 
 newterm_rec(E) {
-  ['0'] ='a' fl('_').p('0').fr2('a', 'b').resubst.l.newterm_rec.E
-  ['1'] ='b' fl('_').p('1').fr2('a', 'b').resubst.l.newterm_rec.E
-  fl('_').p('0').l.p('#').rfr('#').l.l.add_bit.fl('#').r.r.newterm_prune.E
+  ['0'] ='a' fl('_', p('0', fr2('a', 'b', resubst(l(newterm_rec(E))))))
+  ['1'] ='b' fl('_', p('1', fr2('a', 'b', resubst(l(newterm_rec(E))))))
+  fl('_', p('0', l(p('#', rfr('#', l(l(add_bit(fl('#', r(r(newterm_prune(E))))))))))))
 }
 
 newterm_prune(E) {
-  ['0'] < ='#' < ='_' > rfr('#').l.newterm_numerator.E
-  rfr('#').l.newterm_numerator.E
+  ['0'] < ='#' < ='_' > rfr('#', l(newterm_numerator(E)))
+  rfr('#', l(newterm_numerator(E)))
 }
 
 newterm_numerator(E) {
-  ['0', '1'] subst.fl('_').p('0').fr2('a', 'b').resubst.l.newterm_numerator.E
-  < ='1' fl('_').p('#').l.p('%').E
+  ['0', '1'] subst(fl('_', p('0', fr2('a', 'b', resubst(l(newterm_numerator(E)))))))
+  < ='1' fl('_', p('#', l(p('%', E))))
 }
 
 add_bit(E) {
   ['0'] ='1' E
-  ['1'] ='0' < add_bit.E
+  ['1'] ='0' < add_bit(E)
 }
-
-                        V
-__ #0010#0101# #001#011#%$p$011a
-
-
-
-/------------------------------/
-one divisor calculation.
-/------------------------------/
 
 step(T, F) {
   lfl('#', shl(rfr('#', cmpge(sub(T), F))))
@@ -157,11 +189,6 @@ shl1(E) {
   ['1'] < ='1' >> shl1(E)
   < ='0' > E
 }
-
-
-/------------------------------/
-test left >= right
-/------------------------------/
 
 cmpge(T, F) {
   lfl('#', r(subst(l(lfl('#', r(cmpge_entry(T, F)))))))
@@ -196,12 +223,6 @@ cmpge_1(T, F) {
   ['a'] ='0' cmpge_leave(T)
   ['b'] ='1' > cmpge_redo(T, F)
 }
-
-
-
-/------------------------------/
-left -= right
-/------------------------------/
 
 sub(E) {
   lfl('#', l(subst(r(rfr('#', l(sub_entry(E)))))))
