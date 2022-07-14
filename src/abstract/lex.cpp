@@ -61,7 +61,7 @@ void Lexer::lex() {
                     }
                 }
             }
-        } else if (c1 >= '!' && c1 <= '~') {
+        } else if (c1 >= ' ' && c1 <= '~') {
             char c2 = s[cur + 2];
             if (c2 == '\'') {
                 settoken(chr_imm, 1, cur + 1);

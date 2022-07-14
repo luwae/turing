@@ -152,7 +152,7 @@ repl_fromneg(E) {
 }
 
 newterm(E) {
-  =' ' < ='#' >> fr(' ', l(l(newterm_rec(E))))
+  ='#' >> fr(' ', l(l(newterm_rec(E))))
 }
 
 newterm_rec(E) {
@@ -206,7 +206,7 @@ cmpge_redo(T, F) {
   fl2('a', 'b', resubst(fr('#', rfr('#', T))))
 }
 
-cmpge_leave(E)
+cmpge_leave(E) {
   fl2('a', 'b', resubst(fr('#', rfr('#', E))))
 }
 
@@ -259,7 +259,7 @@ sub1_1(E) {
 sub_1_ppg1(E) {
   ['0'] ='b' < sub_1_ppg2(E)
   ['1'] ='a' sub_redo(E)
-  rfr2('a', 'b', resubst(fr('#', E))
+  rfr2('a', 'b', resubst(fr('#', E)))
 }
 
 sub_1_ppg2(E) {

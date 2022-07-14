@@ -1,6 +1,7 @@
 #ifndef LEX_HPP
 #define LEX_HPP
 
+#include <iostream> // TODO: remove output
 #include <string>
 
 namespace lex {
@@ -40,7 +41,7 @@ private:
     bool done = false;
     
     inline void settoken(TokenType t, size_type l, size_type o)
-        { type = t; len = l; offset = o; }
+        { type = t; len = l; offset = o; std::cout << tokname(t) << std::endl; } // TODO: remove output
     TokenType type;
     size_type len;
     size_type offset;
