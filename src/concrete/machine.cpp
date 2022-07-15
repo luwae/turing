@@ -4,6 +4,7 @@
 
 using std::ostream;
 using std::cout; using std::endl;
+using std::string;
 
 void MachineExecution::step() {
     if (done)
@@ -40,6 +41,12 @@ void MachineExecution::step() {
         done = true;
     else
         state = (TuringMachine::size_type) index;
+}
+
+void MachineExecution::step_to(const string &name) {
+    while (tm->get_state(state).name.rfind(name, 0) != 0) {
+        step();
+    }
 }
 
 std::ostream &operator<<(std::ostream &os, const TuringMachine &tm) {

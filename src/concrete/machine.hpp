@@ -66,6 +66,7 @@ public:
     MachineExecution(const TuringMachine *tm, const std::string &input): tm(tm), tape(input) { }
     MachineExecution(const TuringMachine *tm, const std::vector<unsigned char> &v): tm(tm), tape(v) { }
     void step();
+    void step_to(const std::string &name);
     void reset() { pos = 0; done = false; state = 0; }
     Tape::size_type getPos() const { return pos; }
     bool isDone() const { return done; }

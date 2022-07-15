@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
     MachineExecution me(&tm, argv[2]);
     while (!me.isDone()) {
         me.step();
+        me.step_to("newterm(");
         cout << me << endl;
         cin.get();
     }
