@@ -5,12 +5,12 @@
 using std::ostream;
 using std::cout; using std::endl;
 
-void TuringMachine::step(Tape &t) {
+void MachineExecution::step() {
     if (done)
         return;
 
-    unsigned char chr = t[pos];
-    State &curr = states[state];
+    unsigned char chr = tape[pos];
+    const State &curr = tm->get_state(state);
 
     const Action *a = &(curr.deflt);
     for (const auto &b : curr.branches) {
@@ -29,46 +29,53 @@ void TuringMachine::step(Tape &t) {
             ++pos;
             break;
         case PrimitiveType::pt_print:
-            t[pos] = p.chr;
+            tape[pos] = p.chr;
             break;
         }
     }
-    t[pos]; // update tape to fit
+    tape[pos]; // update tape to fit
     
-    auto f = statemap.find(a->next);
-    if (f == statemap.end())
+    int index = tm->find_state(a->next);
+    if (index == -1)
         done = true;
     else
-        state = f->second;
+        state = (TuringMachine::size_type) index;
 }
 
-void TuringMachine::print(const Tape &t) const {
-    int offset_zero = t.lsize();
-    int offset = pos + t.lsize();
+std::ostream &operator<<(std::ostream &os, const TuringMachine &tm) {
+    for (const auto &s : tm.states)
+        os << s << "\n";
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const MachineExecution &me) {
+    int offset_zero = me.tape.lsize();
+    int offset = me.pos + me.tape.lsize();
     for (int i = 0; i != offset; ++i)
-        cout << " ";
-    cout << states[state].name << "\n";
+        os << " ";
+    os << me.tm->get_state(me.state).name << "\n";
 
     if (offset_zero == offset) {
         for (int i = 0; i != offset; ++i)
-            cout << " ";
-        cout << "V\n";
+            os << " ";
+        os << "V\n";
     } else if (offset_zero < offset) {
         for (int i = 0; i != offset_zero; ++i)
-            cout << " ";
-        cout << "|";
+            os << " ";
+        os << "|";
         for (int i = offset_zero + 1; i != offset; ++i)
-            cout << " ";
-        cout << "V\n";
+            os << " ";
+        os << "V\n";
     } else {
         for (int i = 0; i != offset; ++i)
-            cout << " ";
-        cout << "V";
+            os << " ";
+        os << "V";
         for (int i = offset + 1; i != offset_zero; ++i)
-            cout << " ";
-        cout << "|\n";
+            os << " ";
+        os << "|\n";
     }
-    cout << t << "\n";
+    os << me.tape << "\n";
+    return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const Primitive &p) {
@@ -115,11 +122,5 @@ std::ostream &operator<<(std::ostream &os, const State &s) {
     os << "State::" << s.name << "(";
     output_csl(os, s.branches);
     os << ", default=" << s.deflt << ")";
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const TuringMachine &tm) {
-    for (const auto &s : tm.states)
-        os << s << "\n";
     return os;
 }

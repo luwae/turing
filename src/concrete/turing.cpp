@@ -28,15 +28,10 @@ int main(int argc, char *argv[]) {
     Parser ps(input, tm);
     cout << "finished parsing" << endl;
 
-    cout << tm << endl;
-
-    Tape t(argv[2]);
-    tm.print(t);
-    cout << endl;
-    while (!tm.isDone()) {
-        tm.step(t);
-        tm.print(t);
-        cout << endl;
+    MachineExecution me(&tm, argv[2]);
+    while (!me.isDone()) {
+        me.step();
+        cout << me << endl;
         cin.get();
     }
 }

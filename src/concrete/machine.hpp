@@ -43,22 +43,39 @@ public:
 
 class TuringMachine {
 public:
-    void step(Tape &t);
-    void reset() { pos = 0; done = false; state = 0; }
-    void print(const Tape &t) const;
-    friend std::ostream &operator<<(std::ostream &os, const TuringMachine &tm);
+    using size_type = std::vector<State>::size_type;
     void add_state(State &s) { statemap.insert({s.name, states.size()}); states.push_back(s); }
     bool contains_state(const std::string &name) const
         { return statemap.find(name) != statemap.end(); }
-    int getPos() const { return pos; }
-    bool isDone() const { return done; }
-    std::string getState() const { return states[state].name; }
+    const State &get_state(size_type index) const { return states[index]; }
+    int find_state(const std::string &name) const {
+        auto f = statemap.find(name);
+        if (f == statemap.end())
+            return -1;
+        return (int) f->second;
+    }
+    friend std::ostream &operator<<(std::ostream &os, const TuringMachine &tm);
 private:
     std::vector<State> states;
-    std::map<std::string, std::vector<State>::size_type> statemap;
-    int pos = 0;
+    std::map<std::string, size_type> statemap;
+};
+
+class MachineExecution {
+public:
+    MachineExecution(const TuringMachine *tm): tm(tm), tape() { }
+    MachineExecution(const TuringMachine *tm, const std::string &input): tm(tm), tape(input) { }
+    MachineExecution(const TuringMachine *tm, const std::vector<unsigned char> &v): tm(tm), tape(v) { }
+    void step();
+    void reset() { pos = 0; done = false; state = 0; }
+    Tape::size_type getPos() const { return pos; }
+    bool isDone() const { return done; }
+    friend std::ostream &operator<<(std::ostream &os, const MachineExecution &me);
+private:
+    const TuringMachine *tm;
+    Tape tape;
+    Tape::size_type pos = 0;
     bool done = false;
-    std::vector<State>::size_type state = 0;
+    TuringMachine::size_type state = 0;
 };
 
 std::ostream &operator<<(std::ostream &os, const Primitive &p);
