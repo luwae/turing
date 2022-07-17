@@ -21,27 +21,54 @@ enum TokenType {
     comma = 11,
 };
 
+class Lexer;
+
+class Token {
+    friend class Lexer;
+public:
+    using size_type = std::string::size_type;
+
+    static std::string name(TokenType t);
+    std::string substring() const;
+    std::string repr() const;
+
+    TokenType type;
+    size_type len;
+    size_type offset;
+    int line;
+    size_type lineoff;
+private:
+    const Lexer *lx;
+    Token()=default;
+    Token(TokenType type, size_type len, size_type offset, int line, size_type lineoff, const Lexer *lx):
+        type(type), len(len), offset(offset), line(line), lineoff(lineoff), lx(lx) { }
+    Token &operator=(const Token &that) {
+        type = that.type; len = that.len; offset = that.offset; line = that.line; lineoff = that.lineoff; lx = that.lx; return *this;
+    }
+};
+
 class Lexer {
+    friend class Token;
 public:
     using size_type = std::string::size_type;
     Lexer(const std::string &input): s(input)
         { lex(); }
-    TokenType toktype() const { return type; }
-    std::string substring() const;
+    const Token &gettok() { return tok; }
     void lex();
-    void _lex();
-    void expect(TokenType);
-    static std::string tokname(TokenType t);
+    void expect(TokenType t);
+    void reset();
 private:
-    std::string s;
-    size_type cur = 0;
+    char getch();
+    void ungetch();
+    struct {
+        char c = '\0';
+        size_type next = 0;
+        int line = 1;
+        size_type lineoff = 0;
+    } pos, pos_old;
+    const std::string s;
     bool done = false;
-    
-    inline void settoken(TokenType t, size_type l, size_type o)
-        { type = t; len = l; offset = o; }
-    TokenType type;
-    size_type len;
-    size_type offset;
+    Token tok;
 };
 
 }
