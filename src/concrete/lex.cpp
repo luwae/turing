@@ -22,6 +22,8 @@ string Token::name(TokenType t) {
 }
 
 string Token::substring() const {
+    if (type == TokenType::eof)
+        return "";
     return lx->s.substr(offset, len);
 }
 
