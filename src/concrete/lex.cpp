@@ -42,11 +42,11 @@ bool isident2(char c) {
 
 char Lexer::getch() {
     pos_old = pos;
-    pos.c = s[pos.next++];
     if (pos.c == '\n') {
         pos.line++;
         pos.lineoff = pos.next;
     }
+    pos.c = s[pos.next++];
     return pos.c;
 }
 
@@ -75,8 +75,8 @@ void Lexer::lex() {
         {'=', print}, {',', comma}
     };
 
-    tok = Token(error, 1, pos.next, pos.line, pos.lineoff, this);
     char c = getch();
+    tok = Token(error, 1, pos.next - 1, pos.line, pos.lineoff, this);
     auto single_found = single_chars.find(c);
     if (c == '\0') {
         done = true;
