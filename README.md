@@ -6,10 +6,15 @@ The tools and machines in this repository have no practical relevance, they are 
 features:
  * abstract turing machines
     + language grammar
-    + compiler (source-to-source)
+    + source-to-source compiler
+    + interpreter (planned)
  * concrete turing machines
     + language grammar
     + interpreter
+    + compiled file format (planned)
+    + compiler (planned)
+    + runtime (planned)
 
 machines:
  * calculate pi to arbitrary precision
+ * calculate e to arbitrary precision (planned)

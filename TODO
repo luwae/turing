@@ -1,4 +1,5 @@
 general
+ - comments (doxygen?)
  - complete makefile
  - grammar
     - acc/rej (also after actions!)
@@ -17,13 +18,14 @@ general
 abstract
  - grammar
     - comments
-    - dot notation to save parentheses
+    - dot call chaining
  - compiler
     - short name mode
     - real executable instead of parse_test
 
 concrete
+ - fix parser
  - more control over simulation
 
-machines
- - e
+ctm
+ - see where ambiguities are?
