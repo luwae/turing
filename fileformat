@@ -1,91 +1,86 @@
 Turing
 
-### explicit reject after actions!
-
-0 l before
-0 r before
-0 l after
-0 r after
-0 var
-0 varlr
+X l before/size[0] X10000 =printv X111XX=v1..4
+X r before/size[1]
+X l after /size[2]
+X r after /size[3]
+X var
+X varlr
 1 - print
 0 - print
 
-### can make smaller by using 1111 as var
-### extreme: 1110 varl, 1111 varr
+print: 1 +lrlr
+printX: 1..=11
+printw1: 0..256
+printw2: 0..65536
+printw3: 0..8388608
+printw4: 0..4294967296
+printww: 0..
 
-0 l before #### 1111=var
-0 r before
-0 l after
-0 r after
-0 varlr
-1 - print
-0 - print
-0 - print
-
-0 l before #### 1110=varl 1111=varr
-0 r before
-0 l after
-0 r after
-1 - print
-0 - print
-0 - print
-0 - print
-
-### printv <size> <0..7> <8..15> <...>
-
-### use var 7-bit to create unrestrained machines
-
-0 size[0] 1100=movevs1 1101=movevs2 1110=movevs3 1111=movev((movevs4))
-0 size[1]
-0 size[2]
-0 size[3]
-0 lr
+X size[0]
+X size[1]
+X size[2]
+X size[3]
+X lr
 1 - move
 0 - move
 0 - move
 
-### movev <0..6> <7..13> <...>
-### movev <size> <0..7> <8..15>
+moveX: 1..=11
+movew1: 0..256
+movew2: 0..65536
+movew3: 0..8388608
+movew4: 0..4294967296
+moveww: 0..
 
-2XXXX movel(X)
-2f movevl
-3XXXX mover(X)
-3f movevr
+0000=movevvv
+1100=movevv(1)
+1101=movevv(2)
+1110=movevv(3)
+1111=movevv(4)
 
-0 - next[0]
-0 - next[1]
-0 - next[2]
-0 - next[3]
-0 - next[4]
-0 - next[5]
+
+X - next[0]
+X - next[1]
+X - next[2]
+X - next[3]
+X - next[4]
+X - next[5]
 X - next[6]  
 X - next[7]
-1 - statechange
+1 - goto
 
-1111000=statechangevs1
-1111001=statechangevs2
-1111010=statechangevs3
-1111011=statechangev((statechangevs4))
+gotoX: 0..=119
+gotow1: 0..256
+gotow2: 0..65536
+gotow3: 0..8388608
+gotow4: 0..4294967296
+gotoww: 0..
+
+1111000=gotovv1
+1111001=gotovv2
+1111010=gotovv3
+1111011=gotovv4
 1111100=stay
 1111101=acc
 1111110=rej
-1111111=fail (when a char is not found)
+1111111=gotovvv
 
-### TODO think of better system; maybe use other opcodes too
-### TODO resolve conflict with char
-
-X
-X
-X
-X
-0000 = newstate
-((0001 = newstate_deflt))
-0001 = char
-0010 = charrrange
-0011 = chardeflt
-1XXX = charv 1111=charvbig
+X opt
+X opt
+X opt
+X opt
+0000 = state
+1100 = char
+1101 = charrrange
+1110 = chardeflt
+1111 = charw1
 1 - char
 0 - char
 0 - char
 0 - char
+
+charX: 1..=11
+charw1: 0..256
+
+
