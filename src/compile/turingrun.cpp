@@ -24,7 +24,7 @@ void MachineRuntime::collect_offsets() {
                i += (data[i] & 0x03) + 1;
            }
        } else if ((data[i] & 0xc0) == 0x40) { // print
-           if (data[i] & 0x10) { // w
+           if (data[i] & 0x10) {
                if ((data[i] & 0x0f) == 0x00) { // ww
                     // NOTE: ww options are not implemented
                } else if ((data[i] & 0x0f) < 0x0c) {
@@ -46,7 +46,7 @@ void MachineRuntime::collect_offsets() {
                i += (data[i] & 0x03) + 1;
            }
        } else if ((data[i] & 0xf0) == 0x10) { // char
-           if ((data[i] & 0x0f) == 0) { // state
+           if ((data[i] & 0x0f) == 0x00) { // state
                 offsets.push_back(i);
            } else if ((data[i] & 0x0f) < 0x0c) {
                i += (data[i] & 0x0f);
