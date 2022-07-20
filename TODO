@@ -2,6 +2,17 @@ general
  - complete makefile
  - grammar
     - acc/rej (also after actions!)
+    - dotdot for ranges
+ - simplifications
+    - <> -> nothing
+    - <<><>> -> nothing
+    - ='p'='q' -> ='q'
+    - ='p'<>='q' -> ='q'
+    - main { a } a { < end } -> main { < end }
+    - main { ['0'] a ['1'] a } -> main { ['0', '1'] a }
+    - ='p'<<='q'>>='p'<='r'< -> <='r'<='q'
+    - minimization of ranges and charvar
+    - more complex minimizations
 
 abstract
  - grammar

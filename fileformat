@@ -1,9 +1,6 @@
 Turing
 
-### TODO what happens to a char that is not available? implicit reject? - yes
-### how does this affect the encoding?
-### do we ever need an explicit reject, then?
-### yes, to reject after actions have taken place!
+### explicit reject after actions!
 
 0 l before
 0 r before
@@ -14,63 +11,80 @@ Turing
 1 - print
 0 - print
 
-### TODO give print less space
-### TODO statechange more space; 7-bit repr?
+### can make smaller by using 1111 as var
+### extreme: 1110 varl, 1111 varr
 
-0 size[0] 1111 = movebig
+0 l before #### 1111=var
+0 r before
+0 l after
+0 r after
+0 varlr
+1 - print
+0 - print
+0 - print
+
+0 l before #### 1110=varl 1111=varr
+0 r before
+0 l after
+0 r after
+1 - print
+0 - print
+0 - print
+0 - print
+
+### printv <size> <0..7> <8..15> <...>
+
+### use var 7-bit to create unrestrained machines
+
+0 size[0] 1100=movevs1 1101=movevs2 1110=movevs3 1111=movev((movevs4))
 0 size[1]
 0 size[2]
 0 size[3]
 0 lr
-1 - moveop
-0 - moveop
-0 - moveop
+1 - move
+0 - move
+0 - move
 
-0 next[0] 1111=big
-0 next[1]
-0 next[2]
-0 next[3]
-0 acc 00=continue ((11=stay))
-1 ((rej))
-1 - statechange
-0 - statechange
+### movev <0..6> <7..13> <...>
+### movev <size> <0..7> <8..15>
 
-0 - next[0]/vsize[0]
-0 - next[1]/vsize[1]
-0 - next[2]
-0 - next[3]
-0 - next[4]
-X
-X
-00=cont
-01=acc
-10=rej
-11=var
-1 - statechange
+2XXXX movel(X)
+2f movevl
+3XXXX mover(X)
+3f movevr
 
-0 - next[0]/vsize[0]
-0 - next[1]/vsize[1]
+0 - next[0]
+0 - next[1]
 0 - next[2]
 0 - next[3]
 0 - next[4]
 0 - next[5]
-0 - next[6]
-0 - next[7]
-1111100=cont
+X - next[6]  
+X - next[7]
+1 - statechange
+
+1111000=statechangevs1
+1111001=statechangevs2
+1111010=statechangevs3
+1111011=statechangev((statechangevs4))
+1111100=stay
 1111101=acc
 1111110=rej
-1111111=var
-1 - statechange
+1111111=fail (when a char is not found)
+
+### TODO think of better system; maybe use other opcodes too
+### TODO resolve conflict with char
 
 X
 X
 X
 X
 0000 = newstate
-XXX1 = charv 1111=charvbig
-0010 = char
-0100 = charrrange
-0110 = chardeflt
+((0001 = newstate_deflt))
+0001 = char
+0010 = charrrange
+0011 = chardeflt
+1XXX = charv 1111=charvbig
 1 - char
 0 - char
 0 - char
