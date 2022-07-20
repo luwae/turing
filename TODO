@@ -3,7 +3,8 @@ general
  - complete makefile
  - grammar
     - acc/rej (also after actions!)
-    - dotdot for ranges
+    - dotdot for char ranges
+    - @ for current state
  - simplifications
     - <> -> nothing
     - <<><>> -> nothing
@@ -13,8 +14,10 @@ general
     - main { ['0'] a ['1'] a } -> main { ['0', '1'] a }
     - ='p'<<='q'>>='p'<='r'< -> <='r'<='q'
     - minimization of ranges and charvar
-    - more complex minimizations
-
+    - more complex minimizations (space vs. time? file format agnostic?)
+       - fr('a', END) { ['a'] END > fr('a', END) } main { [#] fr('a', END) }
+          -> main { ['#'] > fr('a', END)}
+       
 abstract
  - grammar
     - comments
