@@ -18,8 +18,8 @@ enum PrimitiveType {
 class Primitive {
 public:
     Primitive(PrimitiveType t, unsigned char c): type(t), chr(c) { }
-    const PrimitiveType type;
-    const unsigned char chr;
+    PrimitiveType type;
+    unsigned char chr;
 };
 
 class Action {
@@ -44,6 +44,7 @@ public:
 class TuringMachine {
 public:
     using size_type = std::vector<State>::size_type;
+    friend std::ostream &operator<<(std::ostream &os, const TuringMachine &tm);
     void add_state(State &s) { statemap.insert({s.name, states.size()}); states.push_back(s); }
     bool contains_state(const std::string &name) const
         { return statemap.find(name) != statemap.end(); }
@@ -54,7 +55,6 @@ public:
             return -1;
         return (int) f->second;
     }
-    friend std::ostream &operator<<(std::ostream &os, const TuringMachine &tm);
 private:
     std::vector<State> states;
     std::map<std::string, size_type> statemap;

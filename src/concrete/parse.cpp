@@ -6,16 +6,16 @@ using std::string;
 using std::runtime_error;
 using std::ostream;
 
-using lex::TokenType;
+using lex::TokenType; using lex::Token; using lex::Lexer;
 
 namespace parse {
 
 void Parser::parse() {
-    while (lx.toktype() != TokenType::eof) {
-        if (lx.toktype() != TokenType::ident) {
+    while (lx.gettok().type != TokenType::eof) {
+        if (lx.gettok().type != TokenType::ident) {
             throw runtime_error("expected state name");
         }
-        string name = lx.substring();
+        string name = lx.gettok().substring();
         lx.lex();
         if (tm.contains_state(name))
                 throw runtime_error("duplicate state name");
@@ -30,30 +30,30 @@ void Parser::parse() {
 }
 
 void Parser::parseStatebody(State &s) {
-    if (lx.toktype() == TokenType::rcurly)
+    if (lx.gettok().type == TokenType::rcurly)
         return;
 
-    while (lx.toktype() == TokenType::lbracket) {
+    while (lx.gettok().type == TokenType::lbracket) {
         lx.lex();
         Branch b;
         parseCharargs(s, b);
         lx.expect(TokenType::rbracket);
 
         parsePrimitives(s, b.action);
-        if (lx.toktype() != TokenType::ident)
+        if (lx.gettok().type != TokenType::ident)
             throw runtime_error("expected state transition");
-        b.action.next = lx.substring();
+        b.action.next = lx.gettok().substring();
         lx.lex();
         s.branches.push_back(b);
     }
 
-    TokenType tt = lx.toktype();
+    TokenType tt = lx.gettok().type;
     if (tt == TokenType::movel || tt == TokenType::mover
             || tt == TokenType::print || tt == TokenType::ident) {
         parsePrimitives(s, s.deflt);
-        if (lx.toktype() != TokenType::ident)
+        if (lx.gettok().type != TokenType::ident)
             throw runtime_error("expected state transition default");
-        s.deflt.next = lx.substring();
+        s.deflt.next = lx.gettok().substring();
         lx.lex();
     }
 }
@@ -77,9 +77,9 @@ unsigned char convert_immediate(const string &s) {
 void Parser::parsePrimitives(State &s, Action &a) {
     TokenType tt;
 
-    while (lx.toktype() == TokenType::movel || lx.toktype() == TokenType::mover ||
-            lx.toktype() == TokenType::print) {
-        tt = lx.toktype();
+    while (lx.gettok().type == TokenType::movel || lx.gettok().type == TokenType::mover ||
+            lx.gettok().type == TokenType::print) {
+        tt = lx.gettok().type;
         if (tt == TokenType::movel) {
             a.primitives.emplace_back(PrimitiveType::pt_movel, 0);
             lx.lex();
@@ -88,10 +88,10 @@ void Parser::parsePrimitives(State &s, Action &a) {
             lx.lex();
         } else {
             lx.lex();
-            tt = lx.toktype();
+            tt = lx.gettok().type;
             if (tt != TokenType::chr)
                 throw runtime_error("expected char");
-            a.primitives.emplace_back(PrimitiveType::pt_print, convert_immediate(lx.substring()));
+            a.primitives.emplace_back(PrimitiveType::pt_print, convert_immediate(lx.gettok().substring()));
             lx.lex();
         }
     }
@@ -99,11 +99,11 @@ void Parser::parsePrimitives(State &s, Action &a) {
 
 void Parser::parseCharargs(State &s, Branch &b) {
     while (true) {
-        if (lx.toktype() != TokenType::chr)
+        if (lx.gettok().type != TokenType::chr)
             throw runtime_error("expected char arg");
-        b.chars.insert(convert_immediate(lx.substring()));
+        b.chars.insert(convert_immediate(lx.gettok().substring()));
         lx.lex();
-        if (lx.toktype() != TokenType::comma)
+        if (lx.gettok().type != TokenType::comma)
             break;
         lx.lex();
     }

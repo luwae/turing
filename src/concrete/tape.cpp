@@ -16,6 +16,7 @@ unsigned char &Tape::operator[](int index) {
 }
 
 ostream &operator<<(ostream &os, const Tape &tape) {
+    os << "test";
     for (auto i = tape.left.rbegin(); i != tape.left.rend(); ++i)
         os << *i;
     for (unsigned char c : tape.right)
