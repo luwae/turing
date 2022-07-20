@@ -71,7 +71,7 @@ X opt
 X opt
 X opt
 0000 = state
-1100 = char
+1100 = <reserved> ### TODO charexcl? something else?
 1101 = charrrange
 1110 = chardeflt
 1111 = charw1
