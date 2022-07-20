@@ -1,0 +1,77 @@
+Turing
+
+### TODO what happens to a char that is not available? implicit reject? - yes
+### how does this affect the encoding?
+### do we ever need an explicit reject, then?
+### yes, to reject after actions have taken place!
+
+0 l before
+0 r before
+0 l after
+0 r after
+0 var
+0 varlr
+1 - print
+0 - print
+
+### TODO give print less space
+### TODO statechange more space; 7-bit repr?
+
+0 size[0] 1111 = movebig
+0 size[1]
+0 size[2]
+0 size[3]
+0 lr
+1 - moveop
+0 - moveop
+0 - moveop
+
+0 next[0] 1111=big
+0 next[1]
+0 next[2]
+0 next[3]
+0 acc 00=continue ((11=stay))
+1 ((rej))
+1 - statechange
+0 - statechange
+
+0 - next[0]/vsize[0]
+0 - next[1]/vsize[1]
+0 - next[2]
+0 - next[3]
+0 - next[4]
+X
+X
+00=cont
+01=acc
+10=rej
+11=var
+1 - statechange
+
+0 - next[0]/vsize[0]
+0 - next[1]/vsize[1]
+0 - next[2]
+0 - next[3]
+0 - next[4]
+0 - next[5]
+0 - next[6]
+0 - next[7]
+1111100=cont
+1111101=acc
+1111110=rej
+1111111=var
+1 - statechange
+
+X
+X
+X
+X
+0000 = newstate
+XXX1 = charv 1111=charvbig
+0010 = char
+0100 = charrrange
+0110 = chardeflt
+1 - char
+0 - char
+0 - char
+0 - char

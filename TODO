@@ -1,5 +1,7 @@
 general
  - complete makefile
+ - grammar
+    - acc/rej (also after actions!)
 
 abstract
  - grammar

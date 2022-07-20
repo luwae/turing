@@ -1,2 +1,3 @@
 *.tm linguist-vendored=true
 *.atm linguist-vendored=true
+*.ctm linguist-vendored=true
