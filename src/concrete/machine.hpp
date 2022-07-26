@@ -17,7 +17,7 @@ enum PrimitiveType {
 
 class Primitive {
 public:
-    Primitive(PrimitiveType t, unsigned char c): type(t), chr(c) { }
+    Primitive(PrimitiveType t, unsigned char c = '\0'): type(t), chr(c) { }
     PrimitiveType type;
     unsigned char chr;
 };
