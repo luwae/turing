@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "machine.hpp"
 
 #define IS_GOTO(b) (((b) & 0x80) == 0x80)
@@ -5,78 +7,105 @@
 #define IS_MOVE(b) (((b) & 0xe0) == 0x20)
 #define IS_CHAR(b) (((b) & 0xf0) == 0x10)
 
-#define OP_STATE 0x10
-#define OP_CHAR_RESERVED 0x1c
-#define OP_CHAR_RANGE 0x1d
-#define OP_CHAR_DEFLT 0x1e
-#define OP_CHAR_W1 0x1f
-
-#define ERR_LOAD_EXPECTED_STATE -1
-#define ERR_END -2
-
-#define AT(idx) if (idx >= sz) return ERR_END
-
-class MachineLoader {
-public:
-    MachineLoader(TuringMachine *tm, const unsigned char *data, size_t sz):
-        tm(tm), data(data), sz(sz) { load(); }
-private:
-    unsigned char at(size_t n) { 
-        if (n >= off) throw runtime_error("unexpected end");
-        return data[n];
-    }
-    void load();
-    void load_state();
-
-    TuringMachine * const tm;
-    const unsigned char * const data;
-    size_t off = 0;
-    size_t sz;
+enum LoadError {
+    le_header,
+    le_unexpected_end,
 };
 
-void MachineLoader::load_state() {
-    unsigned char d = at(off);
+static const unsigned char * const HEADER = "CTM";
 
-    Branch b;
-    // TODO loop, but at least once
-    if (IS_CHAR(d)) {
-        switch (d) {
-        case OP_STATE:
-        case OP_CHAR_RESERVED:
-            throw runtime_error("expected char");
-        case OP_CHAR_RANGE:
-            unsigned char start = at(off + 2);
-            unsigned char size = at(off + 1);
-            if (start + (int) size > 255)
-                throw runtime_error("range overflow");
-            for (size_t i = start; i < start + size; i++)
-                b.chars.insert(c);
-            break;
-        case OP_CHAR_DEFLT:
-            // noting; check for empty branch later
-            break;
-        case OP_CHAR_W1:
-            unsigned char size = at(off + 1);
-            if (size == 0)
-                throw runtime_error("empty char");
-            for (size_t i = off + 2; i < off + 2 + size; i++)
-                b.chars.insert(at(i));
-            break;
-        default:
-            size_t size = d & 0x0f;
-            for (size_t i = off + 1; i < off + 1 + size; i++)
-                b.chars.insert(at(i));
-        }
-    } else {
-        throw runtime_error("expected char");
-    }
+// TODO use named constants and macros instead of weird hex values
+
+bool ctm_load_u8(unsigned int &i, istream &is) {
+    unsigned char c;
+    if (!is.get(c)) return false;
+    i = c;
+    return true;
 }
 
-void MachineLoader::load() {
-    while (off < sz) {
-        if (data[off++] != OP_STATE)
-            throw runtime_error("expected state definition");
-        load_state();
+bool ctm_load_u16(unsigned int &i, istream &is) {
+    unsigned char c;
+    if (!is.get(c)) return false;
+    i = c;
+    if (!is.get(c)) return false;
+    num |= ((unsigned int) c) << 8;
+    return true;
+}
+
+bool ctm_load_u24(unsigned int &i, istream &is) {
+    unsigned char c;
+    if (!is.get(c)) return false;
+    i = c;
+    if (!is.get(c)) return false;
+    num |= ((unsigned int) c) << 8;
+    if (!is.get(c)) return false;
+    num |= ((unsigned int) c) << 16;
+    return true;
+}
+
+bool ctm_load_u32(unsigned int &i, istream &is) {
+    unsigned char c;
+    if (!is.get(c)) return false;
+    i = c;
+    if (!is.get(c)) return false;
+    num |= ((unsigned int) c) << 8;
+    if (!is.get(c)) return false;
+    num |= ((unsigned int) c) << 16;
+    if (!is.get(c)) return false;
+    num |= ((unsigned int) c) << 24;
+    return true;
+}
+
+int ctm_load_action(Action &a, istream &is) {
+    unsigned char c;
+
+    do {
+        if (!is.get(c)) return LoadError::le_unexpected_end;
+        if (IS_MOVE(c)) {
+            unsigned int num = c & 0x0f;
+            PrimitiveType pt = (c & 0x10) ? pt_mover : pt_movel;
+            if (num == 0x00) { // moveww
+                // not implemented
+            } else if (num < 0x0c) { // moveX
+                for (int i = 0; i < num; i++)
+                    a->primitives.emplace_back(pt);
+            } else if (lower == 0x0c) { // movew1
+                if(!ctm_load_u8(num, is)) return LoadError::le_unexpected_end;
+                for (unsigned int i = 0; i < num; i++)
+                    a->primitives.emplace_back(pt);
+            } else if (lower == 0x0d) { //movew2
+                if(!ctm_load_u16(num, is)) return LoadError::le_unexpected_end;
+                for (unsigned int i = 0; i < num; i++)
+                    a->primitives.emplace_back(pt);
+            } else if (lower == 0x0e) { // movew3
+                if(!ctm_load_u24(num, is)) return LoadError::le_unexpected_end;
+                for (unsigned int i = 0; i < num; i++)
+                    a->primitives.emplace_back(pt);
+            } else { // movew4
+                if(!ctm_load_u32(num, is)) return LoadError::le_unexpected_end;
+                for (unsigned int i = 0; i < num; i++)
+                    a->primitives.emplace_back(pt);
+            }
+        } else if (IS_PRINT(c)) {
+            // TODO
+        }
+    } while()
+}
+
+int ctm_load_state(State *s, istream &is) {
+}
+
+int ctm_load(TuringMachine *tm, istream &is) {
+    char c;
+    // read header
+    for (int i = 0; i < 3; i++) {
+        if (!is.get(c)) return LoadError::le_unexpected_end;
+        if (c != HEADER[i]) return LoadError::le_header;
     }
-    return 0;
+    // read version byte (not used currently)
+    if (!is.get(c)) return LoadError::le_unexpected_end;
+
+    while (is.good()) {
+
+    }
 }
