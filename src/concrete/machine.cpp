@@ -7,7 +7,7 @@ using std::cout; using std::endl;
 using std::string;
 
 void MachineExecution::step() {
-    if (done)
+    if (term != TerminateType::term_cont)
         return;
 
     unsigned char chr = tape[pos];
@@ -36,16 +36,9 @@ void MachineExecution::step() {
     }
     tape[pos]; // update tape to fit
     
-    int index = tm->find_state(a->next);
-    if (index == -1)
-        done = true;
-    else
-        state = (TuringMachine::size_type) index;
-}
-
-void MachineExecution::step_to(const string &name) {
-    while (tm->get_state(state).name.rfind(name, 0) != 0) {
-        step();
+    term = a->term;
+    if (term == TerminateType::term_cont) {
+        state = a->next;
     }
 }
 
@@ -104,7 +97,19 @@ std::ostream &operator<<(std::ostream &os, const Action &a) {
     os << "Action(";
     for (const auto &p : a.primitives)
         os << p;
-    os << ", " << a.next << ")";
+    os << ", ";
+    switch (a.term) {
+    case term_cont:
+        os << a.next;
+        break;
+    case term_acc:
+        os << "<accept>";
+        break;
+    case term_rej:
+        os << "<reject>";
+        break;
+    }
+    os << ")";
     return os;
 }
 

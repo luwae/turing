@@ -10,10 +10,8 @@ main {
   > main
 }
 
-end { }
-
 add {
-  ['0', '_'] ='1' end
+  ['0', '_'] ='1' ACCEPT
   ='0' < add
 }
  */
@@ -26,15 +24,13 @@ int main() {
     main.name = "main";
     b.chars.insert('_');
     b.action.primitives.emplace_back(PrimitiveType::pt_movel);
-    b.action.next = "add";
+    b.action.term = TerminateType::term_cont;
+    b.action.next = 1;
     main.branches.push_back(b);
     main.deflt.primitives.emplace_back(PrimitiveType::pt_mover);
-    main.deflt.next = "main";
+    main.deflt.term = TerminateType::term_cont;
+    main.deflt.next = 0;
     tm.add_state(main);
-
-    State end;
-    end.name = "end";
-    tm.add_state(end);
 
     State add;
     Branch b2;
@@ -43,18 +39,20 @@ int main() {
     b2.chars.insert('_');
     b2.chars.insert('0');
     b2.action.primitives.emplace_back(PrimitiveType::pt_print, '1');
-    b2.action.next = "end";
+    b2.action.term = TerminateType::term_acc;
     add.branches.push_back(b2);
     add.deflt.primitives.emplace_back(PrimitiveType::pt_print, '0');
     add.deflt.primitives.emplace_back(PrimitiveType::pt_movel);
-    add.deflt.next = "add";
+    add.deflt.term = TerminateType::term_cont;
+    add.deflt.next = 1;
     tm.add_state(add);
 
     cout << tm << endl;
     
     MachineExecution me(&tm, "1011");
-    while (!me.isDone()) {
+    while (me.get_term() == TerminateType::term_cont) {
         me.step();
         cout << me << endl;
     }
+    cout << ((me.get_term() == TerminateType::term_acc) ? "accept" : "reject") << endl;
 }
