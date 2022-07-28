@@ -1,0 +1,54 @@
+File Format
+-----------
+File -> 'C' 'T' 'M' version Machine
+Machine -> 'OP_STATE' State Machine2
+Machine2 -> eps | 'OP_STATE' State Machine2
+State -> eps | Branchspec Branchbody State
+Branchspec -> 'OP_CHARRANGE' size start Branchspec2 | 'OP_CHARW1' char.. Branchspec2 | 'OP_CHARALL' Branchspec2
+Branchspec2 -> eps | 'OP_CHARRANGE' size start Branchspec2 | 'OP_CHARW1' char.. Branchspec2 | 'OP_CHARALL' Branchspec2
+Branchbody -> 'OP_MOVE' Branchbody2 | 'OP_PRINT' Branchbody2 | 'OP_GOTO'
+Branchbody2 -> eps | 'OP_MOVE' Branchbody2 | 'OP_PRINT' Branchbody2 | 'OP_GOTO'
+
+File -> {'C'}
+Machine -> {'OP_STATE'}
+Machine2 -> {eof} | {'OP_STATE'}
+State -> {eof, 'OP_STATE'} | {'OP_CHARRANGE', 'OP_CHARW1', 'OP_CHARALL'}
+Branchspec -> {'OP_CHARRANGE'} | {'OP_CHARW1'} | {'OP_CHARALL'}
+Branchspec2 -> {'OP_MOVE', 'OP_PRINT', 'OP_GOTO'} | {'OP_CHARRANGE'} | {'OP_CHARW1'} | {'OP_CHARALL'}
+Branchbody -> {'OP_MOVE'} | {'OP_PRINT'} | {'OP_GOTO'}
+Branchbody2 -> {eof, 'OP_STATE'} | {'OP_MOVE'} | {'OP_PRINT'} | {'OP_GOTO'}
+
+### convention: branches must not be empty, and goto_stay can be ignored
+### alternative: no goto_stay, but a move 0
+###  -> unnecessarily ugly and not possible with current encoding
+
+Canonical Machine
+-----------------
+Machine -> State Machine2
+Machine2 -> eps | State Machine2
+State -> eps | char print move goto State
+
+Macro-Action Machine
+----------------------
+Machine -> State Machine2
+Machine2 -> eps | State Machine2
+State -> eps | char Branchbody State
+Branchbody -> move Branchbody | print Branchbody | goto
+
+Composite-Symbol Macro-Action Machine
+----------------------
+Machine -> State Machine2
+Machine2 -> eps | State Machine2
+State -> eps | Branchspec Branchbody State
+Branchspec -> char Branchspec2
+Branchspec2 -> eps | char Branchspec2
+Branchbody -> move Branchbody | print Branchbody | goto
+
+
+### TODO language (symbol instead of char, something instead of branch, ...? (read turing))
+
+### conflicts with source language?
+###  -> explicit [default]?
+
+### TODO want several states to be accepting?
+###  -> no; inconsistent in literature

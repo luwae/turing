@@ -45,6 +45,7 @@ class State {
 public:
     std::string name;
     std::vector<Branch> branches;
+    bool has_default = false;
     Action deflt;
 };
 
@@ -53,6 +54,7 @@ public:
     friend std::ostream &operator<<(std::ostream &os, const TuringMachine &tm);
     void add_state(State &s) { states.push_back(s); }
     const State &get_state(unsigned int index) const { return states[index]; }
+    unsigned int size() const { return states.size(); }
 private:
     std::vector<State> states;
 };

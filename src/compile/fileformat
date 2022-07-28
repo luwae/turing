@@ -4,8 +4,12 @@ X l before/size[0] X10000 =printv X111XX=v1..4
 X r before/size[1]
 X l after /size[2]
 X r after /size[3]
-X var
-X varlr
+X
+X
+00=print
+01=<reserved>
+10=varl
+11=varr
 1 - print
 0 - print
 
@@ -71,10 +75,10 @@ X opt
 X opt
 X opt
 0000 = state
-1100 = <reserved> ### TODO charexcl? something else?
-1101 = charrrange
-1110 = chardeflt
-1111 = charw1
+1100 = charw1
+1101 = charrange
+1110 = <reserved> ### TODO charexcl?
+1111 = charall
 1 - char
 0 - char
 0 - char
