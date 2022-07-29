@@ -1,5 +1,5 @@
 main {
-  >>
+  [def] >>
   ='A' <
   ='1' <
   ='$' <
@@ -16,75 +16,73 @@ main {
   ='0' <
   ='#' <
   ='%'
-  > singleterm(end)
+  > singleterm(accept)
 }
 
-end { }
-
 l(E) {
-  < E
+  [def] < E
 }
 
 r(E) {
-  > E
+  [def] > E
 }
 
 p($a, E) {
-  =$a E
+  [def] =$a E
 }
 
 fl($a, E) {
   [$a] E
-  < fl($a, E)
+  [def] <
 }
 
 fr($a, E) {
   [$a] E
-  > fr($a, E)
+  [def] >
 }
 
 lfl($a, E) {
-  < fl($a, E)
+  [def] < fl($a, E)
 }
 
 rfr($a, E) {
-  > fr($a, E)
+  [def] > fr($a, E)
 }
 
 fl2($a, $b, E) {
   [$a, $b] E
-  < fl2($a, $b, E)
+  [def] <
 }
 
 fr2($a, $b, E) {
   [$a, $b] E
-  > fr2($a, $b, E)
+  [def] >
 }
 
 lfl2($a, $b, E) {
-  < fl2($a, $b, E)
+  [def] < fl2($a, $b, E)
 }
 
 rfr2($a, $b, E) {
-  > fr2($a, $b, E)
+  [def] > fr2($a, $b, E)
 }
 
 fl4($a, $b, $c, $d, E) {
   [$a, $b, $c, $d] E
-  < fl4($a, $b, $c, $d, E)
+  [def] <
 }
 
 fr4($a, $b, $c, $d, E) {
   [$a, $b, $c, $d] E
-  > fr4($a, $b, $c, $d, E)
+  [def] >
 }
 
 lfl4($a, $b, $c, $d, E) {
-  < fl4($a, $b, $c, $d, E)
+  [def] < fl4($a, $b, $c, $d, E)
 }
 
 rfr4($a, $b, $c, $d, E) {
-  > fr4($a, $b, $c, $d, E)
+  [def] > fr4($a, $b, $c, $d, E)
 }
 
 subst(E) {
@@ -108,7 +106,7 @@ singleterm(E) {
     r(r(r(substbig(rfr('a', resubst(singleterm(E)))))))
   )))))
 
-  fl('%', p(' ', rfr(' ', p('%', l(step(
+  [def] fl('%', p(' ', rfr(' ', p('%', l(step(
     fr4('a', 'b', 'A', 'B', repl(calc1(fl('$', lfl('$', l(singleterm(E))))))),
     fr4('a', 'b', 'A', 'B', repl(resubst(fl('$', lfl('$', l(singleterm(E)))))))
   ))))))
@@ -152,66 +150,66 @@ repl_fromneg(E) {
 }
 
 newterm(E) {
-  ='#' >> fr(' ', l(l(newterm_rec(E))))
+  [def] ='#' >> fr(' ', l(l(newterm_rec(E))))
 }
 
 newterm_rec(E) {
   ['0'] ='a' fl('_', p('0', fr2('a', 'b', resubst(l(newterm_rec(E))))))
   ['1'] ='b' fl('_', p('1', fr2('a', 'b', resubst(l(newterm_rec(E))))))
-  fl('_', p('0', l(p('#', rfr('#', l(l(add_bit(fl('#', r(r(newterm_prune(E))))))))))))
+  [def] fl('_', p('0', l(p('#', rfr('#', l(l(add_bit(fl('#', r(r(newterm_prune(E))))))))))))
 }
 
 newterm_prune(E) {
   ['0'] < ='#' < ='_' > rfr('#', l(newterm_numerator(E)))
-  rfr('#', l(newterm_numerator(E)))
+  [def] rfr('#', l(newterm_numerator(E)))
 }
 
 newterm_numerator(E) {
   ['0', '1'] subst(fl('_', p('0', fr2('a', 'b', resubst(l(newterm_numerator(E)))))))
-  < ='1' fl('_', p('#', l(p('%', E))))
+  [def] < ='1' fl('_', p('#', l(p('%', E))))
 }
 
 add_bit(E) {
   ['0'] ='1' E
-  ['1'] ='0' < add_bit(E)
+  ['1'] ='0' <
 }
 
 step(T, F) {
-  lfl('#', shl(rfr('#', cmpge(sub(T), F))))
+  [def] lfl('#', shl(rfr('#', cmpge(sub(T), F))))
 }
 
 shl(E) {
-  lfl('#', r(r(shl1(E))))
+  [def] lfl('#', r(r(shl1(E))))
 }
 
 shl1(E) {
   ['0'] < ='0' >> shl1(E)
   ['1'] < ='1' >> shl1(E)
-  < ='0' > E
+  [def] < ='0' > E
 }
 
 cmpge(T, F) {
-  lfl('#', r(subst(l(lfl('#', r(cmpge_entry(T, F)))))))
+  [def] lfl('#', r(subst(l(lfl('#', r(cmpge_entry(T, F)))))))
 }
 
 cmpge_entry(T, F) {
   ['0'] ='a' rfr2('a', 'b', cmpge_0(T, F))
   ['1'] ='b' rfr2('a', 'b', cmpge_1(T, F))
-  rfr('#', T)
+  [def] rfr('#', T)
 }
 
 cmpge_redo(T, F) {
   ['0'] ='a' < fl2('a', 'b', resubst(r(cmpge_entry(T, F))))
   ['1'] ='b' < fl2('a', 'b', resubst(r(cmpge_entry(T, F))))
-  fl2('a', 'b', resubst(fr('#', rfr('#', T))))
+  [def] fl2('a', 'b', resubst(fr('#', rfr('#', T))))
 }
 
 cmpge_leave(E) {
-  fl2('a', 'b', resubst(fr('#', rfr('#', E))))
+  [def] fl2('a', 'b', resubst(fr('#', rfr('#', E))))
 }
 
 cmpge_next(T, F) {
-  r(subst(l(cmpge_redo(T, F))))
+  [def] r(subst(l(cmpge_redo(T, F))))
 }
 
 cmpge_0(T, F) {
@@ -225,7 +223,7 @@ cmpge_1(T, F) {
 }
 
 sub(E) {
-  lfl('#', l(subst(r(rfr('#', l(sub_entry(E)))))))
+  [def] lfl('#', l(subst(r(rfr('#', l(sub_entry(E)))))))
 }
 
 sub_entry(E) {
@@ -234,16 +232,16 @@ sub_entry(E) {
 }
 
 sub_redo(E) {
-  rfr2('a', 'b', resubst(l(sub_entry(E))))
+  [def] rfr2('a', 'b', resubst(l(sub_entry(E))))
 }
 
 sub_0(E) {
-  resubst(l(sub_0_1(E)))
+  [def] resubst(l(sub_0_1(E)))
 }
 
 sub_0_1(E) {
   ['0', '1'] subst(sub_redo(E))
-  fr2('a', 'b', resubst(fr('#', E)))
+  [def] fr2('a', 'b', resubst(fr('#', E)))
 }
 
 sub_1(E) {
@@ -253,17 +251,17 @@ sub_1(E) {
 
 sub1_1(E) {
   ['0', '1'] subst(sub_redo(E))
-  rfr2('a', 'b', resubst(fr('#', E)))
+  [def] rfr2('a', 'b', resubst(fr('#', E)))
 }
 
 sub_1_ppg1(E) {
   ['0'] ='b' < sub_1_ppg2(E)
   ['1'] ='a' sub_redo(E)
-  rfr2('a', 'b', resubst(fr('#', E)))
+  [def] rfr2('a', 'b', resubst(fr('#', E)))
 }
 
 sub_1_ppg2(E) {
   ['0'] ='1' < sub_1_ppg2(E)
   ['1'] ='0' fr2('a', 'b', sub_redo(E))
-  rfr2('a', 'b', sub_redo(E))
+  [def] rfr2('a', 'b', sub_redo(E))
 }

@@ -1,69 +1,67 @@
 main {
-    rfr('#', l(subst(r(rfr('#', l(add(end)))))))
+    [def] rfr('#', l(subst(r(rfr('#', l(add(accept)))))))
 }
 
-end {}
-
 l(E) {
-  < E
+  [def] < E
 }
 
 r(E) {
-  > E
+  [def] > E
 }
 
 fl($a, E) {
   [$a] E
-  < fl($a, E)
+  [def] <
 }
 
 fr($a, E) {
   [$a] E
-  > fr($a, E)
+  [def] >
 }
 
 lfl($a, E) {
-  < fl($a, E)
+  [def] < fl($a, E)
 }
 
 rfr($a, E) {
-  > fr($a, E)
+  [def] > fr($a, E)
 }
 
 fl2($a, $b, E) {
   [$a, $b] E
-  < fl2($a, $b, E)
+  [def] <
 }
 
 fr2($a, $b, E) {
   [$a, $b] E
-  > fr2($a, $b, E)
+  [def] >
 }
 
 lfl2($a, $b, E) {
-  < fl2($a, $b, E)
+  [def] < fl2($a, $b, E)
 }
 
 rfr2($a, $b, E) {
-  > fr2($a, $b, E)
+  [def] > fr2($a, $b, E)
 }
 
 subst(E) {
   ['0'] ='a' E
   ['1'] ='b' E
-  E
+  [def] E
 }
 
 resubst(E) {
   ['a'] ='0' E
   ['b'] ='1' E
-  E
+  [def] E
 }
 
 add(E) {
   ['0'] ='a' lfl2('a', 'b', resubst(l(add2(E))))
   ['1'] ='b' lfl2('a', 'b', add1(E))
-  E
+  [def] E
 }
 
 add1(E) {
@@ -72,22 +70,22 @@ add1(E) {
 }
 
 add2(E) {
-    ['#'] fr2('a', 'b', resubst(fl('#', E)))
-    subst(rfr2('a', 'b', resubst(l(add(E)))))
+  ['#'] fr2('a', 'b', resubst(fl('#', E)))
+  [def] subst(rfr2('a', 'b', resubst(l(add(E)))))
 }
 
 add3(E) {
   ['0'] ='b' rfr2('a', 'b', resubst(l(add(E))))
   ['1'] ='a' < add4(E)
-  fr2('a', 'b', resubst(fl('#', E)))
+  [def] fr2('a', 'b', resubst(fl('#', E)))
 }
 
 add4(E) {
   ['0'] ='1' add5(E)
-  ['1'] ='0' < add4(E)
-  add5(E)
+  ['1'] ='0' <
+  [def] add5(E)
 }
 
 add5(E) {
-  fr2('a', 'b', rfr2('a', 'b', resubst(l(add(E)))))
+  [def] fr2('a', 'b', rfr2('a', 'b', resubst(l(add(E)))))
 }
