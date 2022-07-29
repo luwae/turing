@@ -1,0 +1,11 @@
+state -> m-configuration
+tape/square/symbol
+scanned square / scanned symbol
+configuration: state + read symbol
+
+a-machine vs. c-machine
+computing machine: 01 first kind, rest second kind
+number computed by a machine: first kind with decimal point in front
+complete configuration: motion + contents of square + tape content
+circular vs. circle-free
+ - also circular: no possible move!
