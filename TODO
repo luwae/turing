@@ -4,7 +4,7 @@ general
  - grammar
     - acc/rej (also after actions!)
     - dotdot for char ranges
-    - @ for current state
+    - @ for current state ### not needed anymore, since stay will be implicit
  - simplifications
     - <> -> nothing
     - <<><>> -> nothing
@@ -22,6 +22,7 @@ abstract
  - grammar
     - comments
     - dot call chaining
+    - $$ current char??? - huge machines; maybe not
  - compiler
     - short name mode
     - real executable instead of parse_test

@@ -16,7 +16,8 @@ string Token::name(TokenType t) {
         "eof", "error", "chr", "ident",
         "movel", "mover", "print", "lcurly", "rcurly",
         "lbracket", "rbracket",
-        "comma"
+        "comma",
+        "def", "accept", "reject"
     };
     return names[t];
 }
@@ -62,6 +63,14 @@ void Lexer::reset() {
     lex();
 }
 
+bool contains_keyword(const char *start, const string &keyword) {
+    for (int i = 0; i < keyword.size(); i++) {
+        if (start[i] != keyword[i])
+            return false;
+    }
+    return !isident2(start[keyword.size()]); // guard against identifiers
+}
+
 void Lexer::lex() {
     if (done)
         return;
@@ -75,6 +84,10 @@ void Lexer::lex() {
         {'{', lcurly}, {'}', rcurly},
         {'[', lbracket}, {']', rbracket},
         {'=', print}, {',', comma}
+    };
+
+    static map<string, TokenType> keywords = {
+        {"def", def}, {"accept", accept}, {"reject", reject}
     };
 
     char c = getch();
@@ -112,6 +125,16 @@ void Lexer::lex() {
             }
         }
     } else if (isalpha(c) || c == '_') {
+        
+        for (auto it = keywords.begin(); it != keywords.end(); ++it) {
+            if (contains_keyword(&s[tok.offset], it->first)) {
+                for (int i = 1; i < it->first.size(); i++) // already getch() one
+                    getch();
+                tok.type = it->second; tok.len = it->first.size();
+                return;
+            }
+        }
+
         while (isident2(getch()))
             ;
         ungetch();
@@ -122,7 +145,6 @@ void Lexer::lex() {
     // failed
     done = true;
 }
-
 
 void Lexer::expect(TokenType t) {
     if (tok.type != t)

@@ -19,6 +19,10 @@ enum TokenType {
     lbracket = 9,
     rbracket = 10,
     comma = 11,
+
+    def = 12,
+    accept = 13,
+    reject = 14,
 };
 
 class Lexer;
