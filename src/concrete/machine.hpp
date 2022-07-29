@@ -37,6 +37,7 @@ public:
 
 class Branch {
 public:
+    bool charset_invert = false;
     std::set<unsigned char> chars;
     Action action;
 };
@@ -45,8 +46,6 @@ class State {
 public:
     std::string name;
     std::vector<Branch> branches;
-    bool has_default = false;
-    Action deflt;
 };
 
 class TuringMachine {
