@@ -40,8 +40,7 @@ int ctm_decode_branchbody(Branch &b, unsigned int this_index, istream &is) {
 
     while (true) {
         if (!first_iter) {
-            if (is.peek() == EOF || is.peek() == 0x10
-                    || is.peek() == 0x1c || is.peek() == 0x1d || is.peek() == 0x1f) // TODO IS_CHAR?
+            if (is.peek() == EOF || IS_CHAR(is.peek())) // IS_CHAR includes state
                 return 0;
         }
         if (!get_byte(c, is)) return DECODE_END;
@@ -132,29 +131,29 @@ int ctm_decode_branchspec(Branch &b, istream &is) {
         } else if (num < 0x0c) { // charX
             for (int i = 0; i < num; i++) {
                 if (!get_byte(c, is)) return DECODE_END;
-                if (!b.charset_invert)
-                    b.chars.insert(c);
+                if (!b.symset_invert)
+                    b.syms.insert(c);
             }
         } else if (num == 0x0c) { // charw1
             if (!ctm_decode_int(num, 1, is)) return DECODE_END;
             for (int i = 0; i < num; i++) {
                 if (!get_byte(c, is)) return DECODE_END;
-                if (!b.charset_invert)
-                    b.chars.insert(c);
+                if (!b.symset_invert)
+                    b.syms.insert(c);
             }
         } else if (num == 0x0d) { // charrange
             unsigned char size, start;
             if (!get_byte(size, is)) return DECODE_END;
             if (!get_byte(start, is)) return DECODE_END;
             if (size == 0 || size + (unsigned int) start > 256) return DECODE_INVL_RANGE;
-            if (!b.charset_invert)
+            if (!b.symset_invert)
                 for (unsigned char i = 0; i < size; i++)
-                    b.chars.insert(start + i);
+                    b.syms.insert(start + i);
         } else if (num == 0x0e) { // reserved
             return DECODE_NOT_IMPLEMENTED;
         } else { // charall
-            b.charset_invert = true;
-            b.chars.clear();
+            b.symset_invert = true;
+            b.syms.clear();
         }
 
         first_iter = false;

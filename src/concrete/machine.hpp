@@ -17,9 +17,9 @@ enum PrimitiveType {
 
 class Primitive {
 public:
-    Primitive(PrimitiveType t, unsigned char c = '\0'): type(t), chr(c) { }
+    Primitive(PrimitiveType t, unsigned char sym = '\0'): type(t), sym(sym) { }
     PrimitiveType type;
-    unsigned char chr;
+    unsigned char sym;
 };
 
 enum TerminateType {
@@ -38,8 +38,8 @@ public:
 
 class Branch {
 public:
-    bool charset_invert = false;
-    std::set<unsigned char> chars;
+    bool symset_invert = false;
+    std::set<unsigned char> syms;
     Action action;
 };
 

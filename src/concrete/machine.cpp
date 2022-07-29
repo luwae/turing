@@ -10,16 +10,16 @@ void MachineExecution::step() {
     if (term != TerminateType::term_cont)
         return;
 
-    unsigned char chr = tape[pos];
+    unsigned char sym = tape[pos];
     const State &curr = tm->get_state(state);
 
     const Action *a = nullptr;
     for (const auto &b : curr.branches) {
-        if (b.charset_invert && b.chars.find(chr) == b.chars.end()) {
+        if (b.symset_invert && b.syms.find(sym) == b.syms.end()) {
             a = &(b.action);
             break;
         }
-        if (!b.charset_invert && b.chars.find(chr) != b.chars.end()) {
+        if (!b.symset_invert && b.syms.find(sym) != b.syms.end()) {
             a = &(b.action);
             break;
         }
@@ -39,7 +39,7 @@ void MachineExecution::step() {
             ++pos;
             break;
         case PrimitiveType::pt_print:
-            tape[pos] = p.chr;
+            tape[pos] = p.sym;
             break;
         }
     }
@@ -96,7 +96,7 @@ std::ostream &operator<<(std::ostream &os, const Primitive &p) {
         os << ">";
         break;
     case PrimitiveType::pt_print:
-        os << "='" << p.chr << "'";
+        os << "='" << p.sym << "'";
         break;
     }
     return os;
@@ -136,11 +136,11 @@ void output_csl(std::ostream &os, const T &container) {
 }
 
 std::ostream &operator<<(std::ostream &os, const Branch &b) {
-    if (b.charset_invert) {
+    if (b.symset_invert) {
         os << "!";
     }
     os << "[";
-    output_csl(os, b.chars);
+    output_csl(os, b.syms);
     os << "]: " << b.action;
     return os;
 }
