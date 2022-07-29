@@ -16,7 +16,7 @@ State -> {eof, 'OP_STATE'} | {'OP_CHARRANGE', 'OP_CHARW1', 'OP_CHARALL'}
 Branchspec -> {'OP_CHARRANGE'} | {'OP_CHARW1'} | {'OP_CHARALL'}
 Branchspec2 -> {'OP_MOVE', 'OP_PRINT', 'OP_GOTO'} | {'OP_CHARRANGE'} | {'OP_CHARW1'} | {'OP_CHARALL'}
 Branchbody -> {'OP_MOVE'} | {'OP_PRINT'} | {'OP_GOTO'}
-Branchbody2 -> {eof, 'OP_STATE'} | {'OP_MOVE'} | {'OP_PRINT'} | {'OP_GOTO'}
+Branchbody2 -> {eof, 'OP_STATE', 'OP_CHARRANGE', 'OP_CHARW1', 'OP_CHARALL'} | {'OP_MOVE'} | {'OP_PRINT'} | {'OP_GOTO'}
 
 ### convention: branches must not be empty, and goto_stay can be ignored
 ### alternative: no goto_stay, but a move 0

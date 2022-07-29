@@ -40,7 +40,8 @@ int ctm_decode_branchbody(Branch &b, unsigned int this_index, istream &is) {
 
     while (true) {
         if (!first_iter) {
-            if (is.peek() == EOF || is.peek() == 0x10)
+            if (is.peek() == EOF || is.peek() == 0x10
+                    || is.peek() == 0x1c || is.peek() == 0x1d || is.peek() == 0x1f) // TODO IS_CHAR?
                 return 0;
         }
         if (!get_byte(c, is)) return DECODE_END;
