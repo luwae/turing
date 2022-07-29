@@ -1,9 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "machine.hpp"
-
-using std::string;
+#include "ctm.hpp"
 
 #define IS_GOTO(b) (((b) & 0x80) == 0x80)
 #define IS_PRINT(b) (((b) & 0xc0) == 0x40)
@@ -11,25 +9,26 @@ using std::string;
 #define IS_MOVE(b) (((b) & 0xe0) == 0x20)
 #define IS_CHAR(b) (((b) & 0xf0) == 0x10)
 
-static const unsigned char * const HEADER = "CTM";
+using std::istream;
+using std::string;
+
+bool get_byte(unsigned char &c, istream &is) {
+    char sc;
+    if (!is.get(sc))
+        return false;
+    c = (unsigned int) sc;
+    return true;
+}
 
 bool ctm_decode_int(unsigned int &num, int nb, istream &is) {
     unsigned char c;
     num = 0;
     for (int i = 0; i < nb; i++) {
-        if (!is.get(c)) return false;
+        if (!get_byte(c, is)) return DECODE_END;
         num |= ((unsigned int) c) << (i << 3);
     }
     return true;
 }
-
-#define DECODE_END 1
-#define DECODE_HEADER 2
-#define DECODE_EXPECTED_STATE 3
-#define DECODE_INVL_RANGE 4
-#define DECODE_EXPECTED_BRANCHSPEC 5
-#define DECODE_EXPECTED_BRANCHBODY 6
-#define DECODE_NOT_IMPLEMENTED 7
 
 int ctm_decode_branchbody(Branch &b, unsigned int this_index, istream &is) {
     unsigned char c;
@@ -41,10 +40,10 @@ int ctm_decode_branchbody(Branch &b, unsigned int this_index, istream &is) {
 
     while (true) {
         if (!first_iter) {
-            if (is.peek() == EOF || is.peek == 0x10)
+            if (is.peek() == EOF || is.peek() == 0x10)
                 return 0;
         }
-        if (!is.get(c)) return DECODE_END;
+        if (!get_byte(c, is)) return DECODE_END;
         if (IS_GOTO(c)) {
             TerminateType term = TerminateType::term_cont;
             unsigned int num = c & 0x7f;
@@ -71,7 +70,7 @@ int ctm_decode_branchbody(Branch &b, unsigned int this_index, istream &is) {
                 b.action.primitives.emplace_back(PrimitiveType::pt_movel);
             if (c & 0x02)
                 b.action.primitives.emplace_back(PrimitiveType::pt_mover);
-            if (!is.get(sym)) return DECODE_END;
+            if (!get_byte(sym, is)) return DECODE_END;
             b.action.primitives.emplace_back(PrimitiveType::pt_print, sym);
             if (c & 0x04)
                 b.action.primitives.emplace_back(PrimitiveType::pt_movel);
@@ -89,7 +88,7 @@ int ctm_decode_branchbody(Branch &b, unsigned int this_index, istream &is) {
                 if (!ctm_decode_int(num, num & 0x03, is)) return DECODE_END;
             }
             for (unsigned int i = 0; i < num; i++) {
-                if (!is.get(sym)) return DECODE_END;
+                if (!get_byte(sym, is)) return DECODE_END;
                 b.action.primitives.emplace_back(PrimitiveType::pt_print, sym);
                 if (i != num - 1)
                     b.action.primitives.emplace_back(move);
@@ -124,28 +123,28 @@ int ctm_decode_branchspec(Branch &b, istream &is) {
                 return 0;
         }
 
-        if (!is.get(c)) return DECODE_END;
+        if (!get_byte(c, is)) return DECODE_END;
         if (!IS_CHAR(c)) return DECODE_EXPECTED_BRANCHSPEC;
         unsigned int num = c & 0x0f;
         if (num == 0x00) { // state
             return DECODE_EXPECTED_BRANCHSPEC;
         } else if (num < 0x0c) { // charX
             for (int i = 0; i < num; i++) {
-                if (!is.get(c)) return DECODE_END;
+                if (!get_byte(c, is)) return DECODE_END;
                 if (!b.charset_invert)
                     b.chars.insert(c);
             }
         } else if (num == 0x0c) { // charw1
-            if (!ctm_decode_int(num 1, is)) return DECODE_END;
+            if (!ctm_decode_int(num, 1, is)) return DECODE_END;
             for (int i = 0; i < num; i++) {
-                if (!is.get(c)) return DECODE_END;
+                if (!get_byte(c, is)) return DECODE_END;
                 if (!b.charset_invert)
                     b.chars.insert(c);
             }
         } else if (num == 0x0d) { // charrange
             unsigned char size, start;
-            if (!is.get(size)) return DECODE_END;
-            if (!is.get(start)) return DECODE_END;
+            if (!get_byte(size, is)) return DECODE_END;
+            if (!get_byte(start, is)) return DECODE_END;
             if (size == 0 || size + (unsigned int) start > 256) return DECODE_INVL_RANGE;
             if (!b.charset_invert)
                 for (unsigned char i = 0; i < size; i++)
@@ -172,7 +171,7 @@ int ctm_decode_state(TuringMachine &tm, istream &is) {
     s.name = ctm_statename(tm.size());
 
     while (true) {
-        if (is.peek() == EOF || is.peek == 0x10) {
+        if (is.peek() == EOF || is.peek() == 0x10) {
             tm.add_state(s);
             return 0;
         } else {
@@ -196,7 +195,7 @@ int ctm_decode_machine(TuringMachine &tm, istream &is) {
             if (is.peek() == EOF)
                 return 0;
         }
-        if (!is.get(c)) return DECODE_END;
+        if (!get_byte(c, is)) return DECODE_END;
         if (c != 0x10) return DECODE_EXPECTED_STATE;
         status = ctm_decode_state(tm, is);
         if (status) return status;
@@ -205,13 +204,15 @@ int ctm_decode_machine(TuringMachine &tm, istream &is) {
     }
 }
 
+const unsigned char HEADER[] = {'C', 'T', 'M'};
+
 int ctm_decode(TuringMachine &tm, istream &is) {
     unsigned char c;
     for (int i = 0; i < 3; i++) { // read magic number
-        if (!is.get(c)) return DECODE_END;
+        if (!get_byte(c, is)) return DECODE_END;
         if (c != HEADER[i]) return DECODE_HEADER;
     }
-    if (!is.get(c)) return DECODE_END; // version byte (ignored for now)
+    if (!get_byte(c, is)) return DECODE_END; // version byte (ignored for now)
 
     return ctm_decode_machine(tm, is);
 }

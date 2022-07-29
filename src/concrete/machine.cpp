@@ -13,12 +13,21 @@ void MachineExecution::step() {
     unsigned char chr = tape[pos];
     const State &curr = tm->get_state(state);
 
-    const Action *a = &(curr.deflt);
+    const Action *a = nullptr;
     for (const auto &b : curr.branches) {
-        if (b.chars.find(chr) != b.chars.end()) {
+        if (b.charset_invert && b.chars.find(chr) == b.chars.end()) {
             a = &(b.action);
             break;
         }
+        if (!b.charset_invert && b.chars.find(chr) != b.chars.end()) {
+            a = &(b.action);
+            break;
+        }
+    }
+
+    if (a == nullptr) { // no possible action
+        term = TerminateType::term_fail;
+        return;
     }
 
     for (const auto &p : a->primitives) {
@@ -108,6 +117,9 @@ std::ostream &operator<<(std::ostream &os, const Action &a) {
     case term_rej:
         os << "<reject>";
         break;
+    case term_fail:
+        os << "<fail>";
+        break;
     }
     os << ")";
     return os;
@@ -124,6 +136,9 @@ void output_csl(std::ostream &os, const T &container) {
 }
 
 std::ostream &operator<<(std::ostream &os, const Branch &b) {
+    if (b.charset_invert) {
+        os << "!";
+    }
     os << "[";
     output_csl(os, b.chars);
     os << "]: " << b.action;
@@ -133,6 +148,6 @@ std::ostream &operator<<(std::ostream &os, const Branch &b) {
 std::ostream &operator<<(std::ostream &os, const State &s) {
     os << "State::" << s.name << "(";
     output_csl(os, s.branches);
-    os << ", default=" << s.deflt << ")";
+    os << ")";
     return os;
 }

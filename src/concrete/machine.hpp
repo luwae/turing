@@ -26,6 +26,7 @@ enum TerminateType {
     term_cont,
     term_acc,
     term_rej,
+    term_fail,
 };
 
 class Action {
@@ -64,7 +65,6 @@ public:
     MachineExecution(const TuringMachine *tm, const std::string &input): tm(tm), tape(input) { }
     MachineExecution(const TuringMachine *tm, const std::vector<unsigned char> &v): tm(tm), tape(v) { }
     void step();
-    void reset() { pos = 0; term = TerminateType::term_cont; state = 0; }
     Tape::size_type get_pos() const { return pos; }
     TerminateType get_term() const { return term; }
     friend std::ostream &operator<<(std::ostream &os, const MachineExecution &me);

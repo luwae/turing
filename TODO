@@ -29,6 +29,7 @@ abstract
 concrete
  - fix parser
  - more control over simulation
+ - use 0x00 as blank instead of 0x5f
 
 ctm
  - see where ambiguities are?
