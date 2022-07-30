@@ -36,6 +36,8 @@ public:
     std::string substring() const;
     std::string repr() const;
 
+    // TODO private attributes?
+
     TokenType type;
     size_type len;
     size_type offset;
@@ -59,7 +61,8 @@ public:
         { lex(); }
     const Token &gettok() { return tok; }
     void lex();
-    void expect(TokenType t);
+    void _lex();
+    void expect(TokenType t, bool lex_after = true);
     void reset();
 private:
     char getch();

@@ -72,6 +72,11 @@ bool contains_keyword(const char *start, const string &keyword) {
 }
 
 void Lexer::lex() {
+    _lex();
+    std::cout << tok.repr() << std::endl;
+}
+
+void Lexer::_lex() {
     if (done)
         return;
 
@@ -146,10 +151,11 @@ void Lexer::lex() {
     done = true;
 }
 
-void Lexer::expect(TokenType t) {
+void Lexer::expect(TokenType t, bool lex_after) {
     if (tok.type != t)
         throw runtime_error("expected " + Token::name(t) + " but got " + tok.repr());
-    lex();
+    if (lex_after)
+        lex();
 }
 
 }
