@@ -4,37 +4,55 @@
 
 using std::string;
 using std::runtime_error;
-using std::ostream;
+using std::ostream; using std::cout;
 
 using lex::TokenType; using lex::Token; using lex::Lexer;
 
 namespace parse {
 
+void expect(Lexer &lx, TokenType tt, bool lex_after = true) {
+    if (lx.gettok().gettype() != tt) {
+        lx.gettok().perror(cout, "expected " + Token::name(tt));
+        throw runtime_error("a");
+    }
+    if (lex_after)
+        lx.lex();
+}
+
 void Parser::parse() {
     do {
-        lx.expect(TokenType::ident, false);
+        expect(lx, TokenType::ident, false);
         string name = lx.gettok().substring();
-        lx.lex();
-        if (states.find(name) != states.end()) {
-            throw runtime_error("duplicate state name: " + name);
+        auto found = states.find(name);
+        if (found != states.end()) {
+            lx.gettok().perror(cout, "duplicate state name");
+            found->second.def.perror(cout, "--- previous definition ---");
+            throw runtime_error("a");
         }
-        states[name] = tm.size();
+        StateDesc desc;
+        desc.index = tm.size();
+        desc.def = lx.gettok();
+        states[name] = desc;
+        lx.lex();
 
         State s;
         s.name = name;
-        lx.expect(TokenType::lcurly);
+        expect(lx, TokenType::lcurly);
         parse_statebody(s);
-        lx.expect(TokenType::rcurly);
+        expect(lx, TokenType::rcurly);
         tm.add_state(s);
-    } while (lx.gettok().type != TokenType::eof);
+    } while (lx.gettok().gettype() != TokenType::eof);
+
+    // TODO save resolve tokens to refer to them on error.
 
     // resolve states
     for (int i = 0; i < resolve.size(); i++) {
         auto found = states.find(resolve[i].name);
         if (found == states.end()) {
-            throw runtime_error("could not resolve state: " + resolve[i].name);
+            resolve[i].def.perror(cout, "no fitting state definition");
+            throw runtime_error("a");
         }
-        *(resolve[i].nextp) = found->second;
+        *(resolve[i].nextp) = found->second.index;
     }
 }
 
@@ -59,31 +77,34 @@ unsigned char convert_immediate(const string &s) {
 
 
 void Parser::parse_statebody(State &s) {
-    while (lx.gettok().type == TokenType::lbracket) { // new branch
+    while (lx.gettok().gettype() == TokenType::lbracket) { // new branch
         lx.lex();
         Branch b;
-        if (lx.gettok().type == TokenType::def) {
+        if (lx.gettok().gettype() == TokenType::def) {
             b.symset_invert = true;
             lx.lex();
-            lx.expect(TokenType::rbracket);
+            expect(lx, TokenType::rbracket);
             parse_actions(b.action);
             parse_nextstate(b.action);
 
             s.branches.push_back(b);
             return; // default is last branch
-        } else if (lx.gettok().type == TokenType::chr) {
+        } else if (lx.gettok().gettype() == TokenType::chr) {
             b.syms.insert(convert_immediate(lx.gettok().substring()));
             lx.lex();
-            while (lx.gettok().type == TokenType::comma) {
+            while (lx.gettok().gettype() == TokenType::comma) {
                 lx.lex();
-                lx.expect(TokenType::chr, false);
+                expect(lx, TokenType::chr, false);
                 b.syms.insert(convert_immediate(lx.gettok().substring()));
                 lx.lex();
             }
-            lx.expect(TokenType::rbracket);
+            expect(lx, TokenType::rbracket);
             parse_actions(b.action);
             parse_nextstate(b.action);
             // further branches may follow
+        } else {
+            lx.gettok().perror(cout, "branch specifier must be either 'def' or a list of symbols");
+            throw runtime_error("a");
         }
 
         s.branches.push_back(b);
@@ -92,15 +113,15 @@ void Parser::parse_statebody(State &s) {
 
 void Parser::parse_actions(Action &a) {
     while (true) {
-        if (lx.gettok().type == TokenType::movel) {
+        if (lx.gettok().gettype() == TokenType::movel) {
             a.primitives.emplace_back(PrimitiveType::pt_movel);
             lx.lex();
-        } else if (lx.gettok().type == TokenType::mover) {
+        } else if (lx.gettok().gettype() == TokenType::mover) {
             a.primitives.emplace_back(PrimitiveType::pt_mover);
             lx.lex();
-        } else if (lx.gettok().type == TokenType::print) {
+        } else if (lx.gettok().gettype() == TokenType::print) {
             lx.lex();
-            lx.expect(TokenType::chr, false);
+            expect(lx, TokenType::chr, false);
             a.primitives.emplace_back(PrimitiveType::pt_print, convert_immediate(lx.gettok().substring()));
             lx.lex();
         } else {
@@ -110,17 +131,17 @@ void Parser::parse_actions(Action &a) {
 }
 
 void Parser::parse_nextstate(Action &a) {
-    if (lx.gettok().type == TokenType::accept) {
+    if (lx.gettok().gettype() == TokenType::accept) {
         a.term = TerminateType::term_acc;
         lx.lex();
-    } else if (lx.gettok().type == TokenType::reject) {
+    } else if (lx.gettok().gettype() == TokenType::reject) {
         a.term = TerminateType::term_rej;
         lx.lex();
-    } else if (lx.gettok().type == TokenType::ident) {
+    } else if (lx.gettok().gettype() == TokenType::ident) {
         a.term = TerminateType::term_cont;
-        resolve.emplace_back(&a.next, lx.gettok().substring());
+        resolve.emplace_back(&a.next, lx.gettok().substring(), lx.gettok());
         lx.lex();
-    } else if (lx.gettok().type == TokenType::rcurly || lx.gettok().type == TokenType::lbracket) { // default: stay
+    } else if (lx.gettok().gettype() == TokenType::rcurly || lx.gettok().gettype() == TokenType::lbracket) { // default: stay
         a.term = TerminateType::term_cont;
         a.next = tm.size(); // current state
     }

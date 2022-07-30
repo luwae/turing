@@ -32,25 +32,28 @@ class Token {
 public:
     using size_type = std::string::size_type;
 
+    Token()=default;
+    Token (const Token &that): type(that.type), len(that.len), offset(that.offset), line(that.line), lineoff(that.lineoff) {}
+    Token &operator=(const Token &that) {
+        type = that.type; len = that.len; offset = that.offset; line = that.line; lineoff = that.lineoff; lx = that.lx; return *this;
+    }
+
     static std::string name(TokenType t);
     std::string substring() const;
     std::string repr() const;
-
-    // TODO private attributes?
-
+    std::ostream &perror(std::ostream &os, const std::string &msg) const;
+    TokenType gettype() const { return type; }
+private:
     TokenType type;
     size_type len;
     size_type offset;
     int line;
     size_type lineoff;
-private:
     const Lexer *lx;
-    Token()=default;
+
+    // only allow creation of tokens by lexer
     Token(TokenType type, size_type len, size_type offset, int line, size_type lineoff, const Lexer *lx):
         type(type), len(len), offset(offset), line(line), lineoff(lineoff), lx(lx) { }
-    Token &operator=(const Token &that) {
-        type = that.type; len = that.len; offset = that.offset; line = that.line; lineoff = that.lineoff; lx = that.lx; return *this;
-    }
 };
 
 class Lexer {
@@ -62,7 +65,6 @@ public:
     const Token &gettok() { return tok; }
     void lex();
     void _lex();
-    void expect(TokenType t, bool lex_after = true);
     void reset();
 private:
     char getch();

@@ -5,6 +5,7 @@
 
 #include "lex.hpp"
 
+using std::ostream; using std::endl;
 using std::map;
 using std::string;
 using std::runtime_error;
@@ -35,6 +36,44 @@ string Token::repr() const {
         + ", line=" + std::to_string(line)
         + ", lineoff=" + std::to_string(lineoff)
         + ", str=\"" + substring()  + "\")";
+}
+
+int numlen(int num) {
+    int len = 0;
+    while (num) {
+        num /= 10;
+        len++;
+    }
+    return len;
+}
+
+ostream &Token::perror(ostream &os, const string &msg) const {
+
+    if (type == TokenType::eof) {
+        os << "eof: " << msg << endl;
+        return os;
+    }
+
+    os << line << ":" << (offset - lineoff + 1) << ": " << msg << endl;
+    /*
+    int nlen = numlen(line);
+    for (int i = 0; i < 5 - nlen; i++)
+        os << " ";
+    
+    os << line << " | ";
+    */
+    os << " | ";
+    for (size_type index = lineoff; lx->s[index] != '\n' && lx->s[index] != '\0'; index++)
+        os << lx->s[index];
+    os << endl;
+    os << " | ";
+    for (int i = 0; i < offset - lineoff; i++)
+        os << " ";
+    for (int i = 0; i < len; i++)
+        os << "~";
+    os << endl;
+
+    return os;
 }
 
 bool isident2(char c) {
@@ -69,6 +108,8 @@ bool contains_keyword(const char *start, const string &keyword) {
             return false;
     }
     return !isident2(start[keyword.size()]); // guard against identifiers
+    // TODO problem: def, gives an identifier of length 4!
+    // TODO maybe do not allow that many chars in state names?
 }
 
 void Lexer::lex() {
@@ -149,13 +190,6 @@ void Lexer::_lex() {
 
     // failed
     done = true;
-}
-
-void Lexer::expect(TokenType t, bool lex_after) {
-    if (tok.type != t)
-        throw runtime_error("expected " + Token::name(t) + " but got " + tok.repr());
-    if (lex_after)
-        lex();
 }
 
 }

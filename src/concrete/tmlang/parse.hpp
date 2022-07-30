@@ -12,9 +12,15 @@
 namespace parse {
 
 struct NameResolve {
-    NameResolve(unsigned int *nextp, const std::string &&name): nextp(nextp), name(name) { }
+    NameResolve(unsigned int *nextp, std::string &&name, lex::Token def): nextp(nextp), name(name), def(def) { }
     unsigned int *nextp;
-    const std::string name;
+    std::string name;
+    lex::Token def;
+};
+
+struct StateDesc {
+    unsigned int index;
+    lex::Token def;
 };
 
 class Parser {
@@ -26,7 +32,7 @@ private:
     void parse_actions(Action &a);
     void parse_nextstate(Action &a);
     lex::Lexer lx;
-    std::map<std::string, unsigned int> states;
+    std::map<std::string, StateDesc> states;
     std::vector<NameResolve> resolve;
     TuringMachine &tm;
 };
