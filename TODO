@@ -2,9 +2,7 @@ general
  - comments (doxygen?)
  - complete makefile
  - grammar
-    - acc/rej (also after actions!)
     - dotdot for char ranges
-    - @ for current state ### not needed anymore, since stay will be implicit
  - simplifications
     - <> -> nothing
     - <<><>> -> nothing
