@@ -13,7 +13,7 @@ namespace parse {
 void expect(Lexer &lx, TokenType tt, bool lex_after = true) {
     if (lx.gettok().gettype() != tt) {
         lx.gettok().perror(cout, "expected " + Token::name(tt));
-        throw runtime_error("a");
+        throw runtime_error("fail");
     }
     if (lex_after)
         lx.lex();
@@ -23,16 +23,16 @@ void Parser::parse() {
     do {
         expect(lx, TokenType::ident, false);
         string name = lx.gettok().substring();
-        auto found = states.find(name);
-        if (found != states.end()) {
+        auto found = statedescs.find(name);
+        if (found != statedescs.end()) {
             lx.gettok().perror(cout, "duplicate state name");
             found->second.def.perror(cout, "--- previous definition ---");
-            throw runtime_error("a");
+            throw runtime_error("fail");
         }
         StateDesc desc;
-        desc.index = tm.size();
+        desc.index = states.size();
         desc.def = lx.gettok();
-        states[name] = desc;
+        statedescs[name] = desc;
         lx.lex();
 
         State s;
@@ -40,38 +40,38 @@ void Parser::parse() {
         expect(lx, TokenType::lcurly);
         parse_statebody(s);
         expect(lx, TokenType::rcurly);
-        tm.add_state(s);
+        states.push_back(s); // collect states in parser because we need to resolve references later
     } while (lx.gettok().gettype() != TokenType::eof);
-
-    // TODO save resolve tokens to refer to them on error.
 
     // resolve states
     for (int i = 0; i < resolve.size(); i++) {
-        auto found = states.find(resolve[i].name);
-        if (found == states.end()) {
+        auto found = statedescs.find(resolve[i].def.substring());
+        if (found == statedescs.end()) {
             resolve[i].def.perror(cout, "no fitting state definition");
-            throw runtime_error("a");
+            throw runtime_error("fail");
         }
-        *(resolve[i].nextp) = found->second.index;
+        states[resolve[i].si].branches[resolve[i].bi].action.next = found->second.index;
+    }
+    
+    // copy states to machine
+    for (int i = 0; i < states.size(); i++) {
+        tm.add_state(states[i]);
     }
 }
 
 unsigned char convert_immediate(const string &s) {
-
-    // Note: immediates are of the form "'a'" (length 3) or "'\xf3'" (length 5)
-
-    if (s.length() == 3)
-        return s[1];
+    if (s.length() == 1)
+        return s[0];
 
     unsigned char v = 0;
+    if (s[1] <= '9')
+        v += (s[1] - '0') << 4;
+    else
+        v += (s[1] - 'a' + 10) << 4;
     if (s[2] <= '9')
-        v += (s[2] - '0') << 4;
+        v += s[2] - '0';
     else
-        v += (s[2] - 'a' + 10) << 4;
-    if (s[3] <= '9')
-        v += s[3] - '0';
-    else
-        v += s[3] - 'a' + 10;
+        v += s[2] - 'a' + 10;
     return v;
 }
 
@@ -85,7 +85,7 @@ void Parser::parse_statebody(State &s) {
             lx.lex();
             expect(lx, TokenType::rbracket);
             parse_actions(b.action);
-            parse_nextstate(b.action);
+            parse_nextstate(s, b.action);
 
             s.branches.push_back(b);
             return; // default is last branch
@@ -100,11 +100,11 @@ void Parser::parse_statebody(State &s) {
             }
             expect(lx, TokenType::rbracket);
             parse_actions(b.action);
-            parse_nextstate(b.action);
+            parse_nextstate(s, b.action);
             // further branches may follow
         } else {
             lx.gettok().perror(cout, "branch specifier must be either 'def' or a list of symbols");
-            throw runtime_error("a");
+            throw runtime_error("fail");
         }
 
         s.branches.push_back(b);
@@ -130,7 +130,7 @@ void Parser::parse_actions(Action &a) {
     }
 }
 
-void Parser::parse_nextstate(Action &a) {
+void Parser::parse_nextstate(const State &s, Action &a) {
     if (lx.gettok().gettype() == TokenType::accept) {
         a.term = TerminateType::term_acc;
         lx.lex();
@@ -139,11 +139,11 @@ void Parser::parse_nextstate(Action &a) {
         lx.lex();
     } else if (lx.gettok().gettype() == TokenType::ident) {
         a.term = TerminateType::term_cont;
-        resolve.emplace_back(&a.next, lx.gettok().substring(), lx.gettok());
+        resolve.emplace_back(states.size(), s.branches.size(), lx.gettok());
         lx.lex();
     } else if (lx.gettok().gettype() == TokenType::rcurly || lx.gettok().gettype() == TokenType::lbracket) { // default: stay
         a.term = TerminateType::term_cont;
-        a.next = tm.size(); // current state
+        a.next = states.size(); // current state
     }
     // TODO else fail?
 }

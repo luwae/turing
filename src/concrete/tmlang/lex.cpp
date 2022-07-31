@@ -55,13 +55,6 @@ ostream &Token::perror(ostream &os, const string &msg) const {
     }
 
     os << line << ":" << (offset - lineoff + 1) << ": " << msg << endl;
-    /*
-    int nlen = numlen(line);
-    for (int i = 0; i < 5 - nlen; i++)
-        os << " ";
-    
-    os << line << " | ";
-    */
     os << " | ";
     for (size_type index = lineoff; lx->s[index] != '\n' && lx->s[index] != '\0'; index++)
         os << lx->s[index];
@@ -76,10 +69,12 @@ ostream &Token::perror(ostream &os, const string &msg) const {
     return os;
 }
 
+bool isident1(char c) {
+    return isalpha(c) || c == '_';
+}
+
 bool isident2(char c) {
-    // allow more characters than would usually be the case, for conversion
-    string special = "()',";
-    return isalpha(c) || c == '_' || (c >= '0' && c <= '9') || special.find(c) != string::npos;
+    return isalpha(c) || c == '_' || (c >= '0' && c <= '9');
 }
 
 char Lexer::getch() {
@@ -108,8 +103,6 @@ bool contains_keyword(const char *start, const string &keyword) {
             return false;
     }
     return !isident2(start[keyword.size()]); // guard against identifiers
-    // TODO problem: def, gives an identifier of length 4!
-    // TODO maybe do not allow that many chars in state names?
 }
 
 void Lexer::lex() {
@@ -151,14 +144,14 @@ void Lexer::_lex() {
         if (c1 == 'x') {
             char c2 = getch();
             if (c2 == '\'') {
-                tok.type = chr; tok.len = 3;
+                tok.type = chr; tok.len = 1; tok.offset++;
                 return;
             } else if (isxdigit(c2)) {
                 char c3 = getch();
                 if (isxdigit(c3)) {
                     char c4 = getch();
                     if (c4 == '\'') {
-                        tok.type = chr; tok.len = 5;
+                        tok.type = chr; tok.len = 3; tok.offset++;
                         return;
                     }
                 }
@@ -166,7 +159,7 @@ void Lexer::_lex() {
         } else if (c1 >= ' ' && c1 <= '~') {
             char c2 = getch();
             if (c2 == '\'') {
-                tok.type = chr; tok.len = 3;
+                tok.type = chr; tok.len = 1; tok.offset++;
                 return;
             }
         }
@@ -186,6 +179,14 @@ void Lexer::_lex() {
         ungetch();
         tok.type = ident; tok.len = pos.next - tok.offset;
         return;
+    } else if (c == '"') {
+    	do {
+    	    c = getch();
+    	} while (c != '"' && c != '\n' && c != '\0');
+    	if (c == '"') { // valid identifier literal
+    	    tok.type = ident; tok.len = pos.next - tok.offset - 2; tok.offset++;
+    	    return;
+    	}
     }
 
     // failed

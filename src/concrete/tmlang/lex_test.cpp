@@ -23,8 +23,8 @@ int main(int argc, char *argv[]) {
     string input = ss.str();
 
     Lexer lx(input);
-    while (lx.gettok().type != TokenType::eof
-            && lx.gettok().type != TokenType::error) {
+    while (lx.gettok().gettype() != TokenType::eof
+            && lx.gettok().gettype() != TokenType::error) {
         cout << lx.gettok().repr() << endl;
         lx.lex();
     }
