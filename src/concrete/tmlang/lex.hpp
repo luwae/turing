@@ -23,6 +23,8 @@ enum TokenType {
     def = 12,
     accept = 13,
     reject = 14,
+    
+    range = 15,
 };
 
 class Lexer;

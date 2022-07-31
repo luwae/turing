@@ -18,7 +18,8 @@ string Token::name(TokenType t) {
         "movel", "mover", "print", "lcurly", "rcurly",
         "lbracket", "rbracket",
         "comma",
-        "def", "accept", "reject"
+        "def", "accept", "reject",
+        "range"
     };
     return names[t];
 }
@@ -122,7 +123,8 @@ void Lexer::_lex() {
         {'<', movel}, {'>', mover},
         {'{', lcurly}, {'}', rcurly},
         {'[', lbracket}, {']', rbracket},
-        {'=', print}, {',', comma}
+        {'=', print}, {',', comma},
+        {'-', range}
     };
 
     static map<string, TokenType> keywords = {

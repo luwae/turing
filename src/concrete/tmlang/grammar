@@ -1,8 +1,9 @@
 S          -> id { Statebody } S1
 S1         -> eps | id { Statebody } S1
 Statebody  -> eps | [ Statebody2
-Statebody2 -> def ] Actions Nextstate | chr Charargs ] Actions NextState Statebody
-Charargs   -> eps | , chr Charargs
+Statebody2 -> def ] Actions Nextstate | chr Chrarrange Charargs ] Actions NextState Statebody
+Charargs   -> eps | , chr Charrange Charargs
+Charrange  -> eps | - chr
 Actions    -> eps | > Actions | < Actions | = chr Actions
 NextState  -> eps | accept | reject | id
 
@@ -11,5 +12,6 @@ S1         -> {'eof'} | {'id'}
 Statebody  -> {'}'} | {'['}
 Statebody2 -> {'def'} | {'chr'}
 Charargs   -> {']'} | {','}
+Charrange  -> {']', ','} | {'-'}
 Actions    -> {'}', '[', 'accept', 'reject', 'id'} | {'>'} | {'<'} | {'='}
 NextState  -> {'}', '['} | {'accept'} | {'reject'} | {'id'}
