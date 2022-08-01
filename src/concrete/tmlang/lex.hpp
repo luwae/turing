@@ -71,6 +71,7 @@ public:
 private:
     char getch();
     void ungetch();
+    void remove_whitespace();
     struct {
         char c = '\0';
         size_type next = 0;

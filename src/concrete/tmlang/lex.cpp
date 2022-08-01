@@ -111,13 +111,31 @@ void Lexer::lex() {
     std::cout << tok.repr() << std::endl;
 }
 
+void Lexer::remove_whitespace() {
+    while (true) {
+        while (isspace(getch()))
+            ;
+        ungetch();
+        if (getch() == '#') {
+            char c;
+            do {
+                c = getch();
+            } while (c != '\n' && c != '\0');
+            ungetch();
+            if (c == '\0')
+                return;
+        } else {
+            ungetch();
+            return;
+        }
+    }
+}
+
 void Lexer::_lex() {
     if (done)
         return;
 
-    while (isspace(getch()))
-        ;
-    ungetch();
+    remove_whitespace();
 
     static map<char, TokenType> single_chars = {
         {'<', movel}, {'>', mover},
