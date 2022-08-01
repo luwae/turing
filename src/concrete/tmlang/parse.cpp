@@ -90,14 +90,30 @@ void Parser::parse_statebody(State &s) {
             s.branches.push_back(b);
             return; // default is last branch
         } else if (lx.gettok().gettype() == TokenType::chr) {
-            b.syms.insert(convert_immediate(lx.gettok().substring()));
-            lx.lex();
-            while (lx.gettok().gettype() == TokenType::comma) {
-                lx.lex();
-                expect(lx, TokenType::chr, false);
-                b.syms.insert(convert_immediate(lx.gettok().substring()));
-                lx.lex();
-            }
+            do {
+            	unsigned char sym = convert_immediate(lx.gettok().substring());
+            	b.syms.insert(sym);
+            	lx.lex();
+            	if (lx.gettok().gettype() == TokenType::range) {
+            	   lx.lex();
+            	   expect(lx, TokenType::chr, false);
+            	   unsigned char stop = convert_immediate(lx.gettok().substring());
+            	   if (stop <= sym) {
+            	   	lx.gettok().perror(cout, "invalid range");
+            	   	throw runtime_error("fail");
+            	   }
+            	   for (sym++; sym <= stop; sym++) // first symbol is already inserted
+            	       b.syms.insert(sym);
+            	   lx.lex();
+            	}
+            	if (lx.gettok().gettype() == TokenType::comma) {
+            	    lx.lex();
+            	    expect(lx, TokenType::chr, false);
+            	} else {
+            	    break;
+            	}
+            } while (true);
+            
             expect(lx, TokenType::rbracket);
             parse_actions(b.action);
             parse_nextstate(s, b.action);
