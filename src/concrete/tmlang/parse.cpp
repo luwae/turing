@@ -10,6 +10,15 @@ using lex::TokenType; using lex::Token; using lex::Lexer;
 
 namespace parse {
 
+string real_ident(const Token &t) {
+    string s = t.substring();
+    if (s[0] == '"') {
+        s.erase(0, 1);
+        s.erase(s.size() - 1, 1);
+    }
+    return s;
+}
+
 void expect(Lexer &lx, TokenType tt, bool lex_after = true) {
     if (lx.gettok().gettype() != tt) {
         lx.gettok().perror(cout, "expected " + Token::name(tt));
@@ -22,7 +31,7 @@ void expect(Lexer &lx, TokenType tt, bool lex_after = true) {
 void Parser::parse() {
     do {
         expect(lx, TokenType::ident, false);
-        string name = lx.gettok().substring();
+        string name = real_ident(lx.gettok());
         auto found = statedescs.find(name);
         if (found != statedescs.end()) {
             lx.gettok().perror(cout, "duplicate state name");
@@ -45,7 +54,7 @@ void Parser::parse() {
 
     // resolve states
     for (int i = 0; i < resolve.size(); i++) {
-        auto found = statedescs.find(resolve[i].def.substring());
+        auto found = statedescs.find(real_ident(resolve[i].def));
         if (found == statedescs.end()) {
             resolve[i].def.perror(cout, "no fitting state definition");
             throw runtime_error("fail");
@@ -60,18 +69,18 @@ void Parser::parse() {
 }
 
 unsigned char convert_immediate(const string &s) {
-    if (s.length() == 1)
-        return s[0];
+    if (s.length() == 3)
+        return s[1];
 
     unsigned char v = 0;
-    if (s[1] <= '9')
-        v += (s[1] - '0') << 4;
-    else
-        v += (s[1] - 'a' + 10) << 4;
     if (s[2] <= '9')
-        v += s[2] - '0';
+        v += (s[2] - '0') << 4;
     else
-        v += s[2] - 'a' + 10;
+        v += (s[2] - 'a' + 10) << 4;
+    if (s[3] <= '9')
+        v += s[3] - '0';
+    else
+        v += s[3] - 'a' + 10;
     return v;
 }
 

@@ -39,15 +39,6 @@ string Token::repr() const {
         + ", str=\"" + substring()  + "\")";
 }
 
-int numlen(int num) {
-    int len = 0;
-    while (num) {
-        num /= 10;
-        len++;
-    }
-    return len;
-}
-
 ostream &Token::perror(ostream &os, const string &msg) const {
 
     if (type == TokenType::eof) {
@@ -79,6 +70,8 @@ bool isident2(char c) {
 }
 
 char Lexer::getch() {
+    tok.len++;
+
     pos_old = pos;
     if (pos.c == '\n') {
         pos.line++;
@@ -89,6 +82,8 @@ char Lexer::getch() {
 }
 
 void Lexer::ungetch() {
+    tok.len--;
+
     pos = pos_old;
 }
 
@@ -131,6 +126,12 @@ void Lexer::remove_whitespace() {
     }
 }
 
+char Lexer::newtoken() {
+    char c = getch();
+    tok = Token(error, 1, pos.next - 1, pos.line, pos.lineoff, this);
+    return c;
+}
+
 void Lexer::_lex() {
     if (done)
         return;
@@ -149,8 +150,8 @@ void Lexer::_lex() {
         {"def", def}, {"accept", accept}, {"reject", reject}
     };
 
-    char c = getch();
-    tok = Token(error, 1, pos.next - 1, pos.line, pos.lineoff, this);
+    char c = newtoken();
+
     auto single_found = single_chars.find(c);
     if (c == '\0') {
         done = true;
@@ -164,14 +165,14 @@ void Lexer::_lex() {
         if (c1 == 'x') {
             char c2 = getch();
             if (c2 == '\'') {
-                tok.type = chr; tok.len = 1; tok.offset++;
+                tok.type = chr;
                 return;
             } else if (isxdigit(c2)) {
                 char c3 = getch();
                 if (isxdigit(c3)) {
                     char c4 = getch();
                     if (c4 == '\'') {
-                        tok.type = chr; tok.len = 3; tok.offset++;
+                        tok.type = chr;
                         return;
                     }
                 }
@@ -179,7 +180,7 @@ void Lexer::_lex() {
         } else if (c1 >= ' ' && c1 <= '~') {
             char c2 = getch();
             if (c2 == '\'') {
-                tok.type = chr; tok.len = 1; tok.offset++;
+                tok.type = chr;
                 return;
             }
         }
@@ -189,7 +190,7 @@ void Lexer::_lex() {
             if (contains_keyword(&s[tok.offset], it->first)) {
                 for (int i = 1; i < it->first.size(); i++) // already getch() one
                     getch();
-                tok.type = it->second; tok.len = it->first.size();
+                tok.type = it->second;
                 return;
             }
         }
@@ -197,14 +198,14 @@ void Lexer::_lex() {
         while (isident2(getch()))
             ;
         ungetch();
-        tok.type = ident; tok.len = pos.next - tok.offset;
+        tok.type = ident;
         return;
     } else if (c == '"') {
     	do {
     	    c = getch();
     	} while (c != '"' && c != '\n' && c != '\0');
     	if (c == '"') { // valid identifier literal
-    	    tok.type = ident; tok.len = pos.next - tok.offset - 2; tok.offset++;
+    	    tok.type = ident;
     	    return;
     	}
     }

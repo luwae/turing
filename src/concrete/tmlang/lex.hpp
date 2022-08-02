@@ -71,6 +71,7 @@ public:
 private:
     char getch();
     void ungetch();
+    char newtoken();
     void remove_whitespace();
     struct {
         char c = '\0';
