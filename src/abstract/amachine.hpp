@@ -51,7 +51,9 @@ class Call {
 public:
     enum Type {
         ct_state_var = 0,
-        ct_state_imm
+        ct_state_imm,
+        ct_state_accept,
+        ct_state_reject
     };
     Call() = default;
     Call(const Call &that) = default;

@@ -1,28 +1,39 @@
-S          -> id Stateargs { Statebody } S | eps
-Stateargs  -> ( Stateargs2 | eps
-Stateargs2 -> id Stateargs3 | cvar Stateargs3
-Stateargs3 -> ) | , Stateargs2
+S          -> id Stateargs { Statebody } S2
+S2         -> eps | id Stateargs { Statebody } S2
+
+Stateargs  -> eps | ( Stateargs2 )
+Stateargs2 -> id Stateargs3 | $ id Stateargs3
+Stateargs3 -> eps | , Stateargs2
+
+Statebody  -> eps | [ Statebody2
+Statebody2 -> def ] Actions Nextstate | Sym Symrange Symargs ] Actions Nextstate Statebody
+Symargs    -> eps | , Sym Symrange Symargs
+Symrange   -> eps | - Sym
+Sym        -> sym | $ id
+Actions    -> eps | > Actions | < Actions | = Sym Actions
+Nextstate  -> eps | Call
+Call       -> accept | reject | id Callargs
+Callargs   -> eps | ( Callargs2 )
+Callargs2  -> Sym Callargs3 | Call Callargs3
+Callargs3  -> eps | , Callargs2
 
 
-Statebody  -> [ Charargs ] Actions Obj Statebody | Actions Obj | eps
-Charargs   -> Char Charargs2
-Charargs2  -> eps | , Charargs
-Actions    -> > Actions | < Actions | = Char Actions | eps
-Char       -> cimm | cvar
-Obj        -> id Obj2
-Obj2       -> ( Obj3 | eps
-Obj3       -> Char Obj4 | Obj Obj4   # Note: can't communicate that variable states cannot be given arguments
-Obj4       -> , Obj3 | )
 
+S          -> {id}
+S2         -> {eof} | {id}
 
-S          -> {id} | {#}
+Stateargs  -> {'{'} | {'('}
+Stateargs2 -> {id} | {'$'}
+Stateargs3 -> {')'} | {','}
 
-Statebody  -> {[} | {< > = id} | {}}
-Charargs   -> {cimm cvar}
-Charargs2  -> {]} | {,}
-Actions    -> {>} | {<} | {=} | {id}
-Char       -> {cimm} | {cvar}
-Obj        -> {id}
-Obj2       -> {(} | {[ < > = id }}
-Obj3       -> {cimm | cvar} | {id}
-Obj4       -> {,} | {)}
+Statebody  -> {'}'} | {'['}
+Statebody2 -> {'def'} | {sym, '$'}
+Symargs    -> {']'} | {','}
+Symrange   -> {']', ','} | {'-'}
+Sym        -> {sym} | {'$'}
+Actions    -> eps | {'>'} | {'<'} | {=}
+Nextstate  -> {'}', '['} | {accept, reject, id}
+Call       -> {accept} | {reject} | {id}
+Callargs   -> {')', ',', '}', '['} | {'('}
+Callargs2  -> {sym, '$'} | {accept, reject, id}
+Callargs3  -> {')'} | {','}

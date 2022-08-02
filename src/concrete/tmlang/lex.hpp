@@ -35,10 +35,8 @@ public:
     using size_type = std::string::size_type;
 
     Token()=default;
-    Token (const Token &that): type(that.type), len(that.len), offset(that.offset), line(that.line), lineoff(that.lineoff), lx(that.lx) {}
-    Token &operator=(const Token &that) {
-        type = that.type; len = that.len; offset = that.offset; line = that.line; lineoff = that.lineoff; lx = that.lx; return *this;
-    }
+    Token (const Token &that)=default;
+    Token &operator=(const Token &that)=default;
 
     static std::string name(TokenType t);
     std::string substring() const;
