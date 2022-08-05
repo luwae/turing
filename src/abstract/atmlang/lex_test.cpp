@@ -1,23 +1,31 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
+
 #include "lex.hpp"
 
-using std::cout; using std::endl;
+using std::cin; using std::cout; using std::endl;
 using std::ifstream; using std::stringstream;
-using lex::Lexer; using lex::TokenType;
+using std::string;
 
-int main() {
-    ifstream file("../../machines/simple.atm");
+using namespace lex;
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        cout << "usage: lex_test <machine file>" << endl;
+        return -1;
+    }
+
+    ifstream file(argv[1]);
     stringstream ss;
     ss << file.rdbuf();
-    
-    Lexer lx(ss.str());
-    cout << "Token(" << lx.tokname(lx.toktype()) << ", "
-         << lx.substring() << ")" << endl;
-    do {
+    string input = ss.str();
+
+    Lexer lx(input);
+    while (lx.gettok().gettype() != TokenType::eof
+            && lx.gettok().gettype() != TokenType::error) {
+        cout << lx.gettok().repr() << endl;
         lx.lex();
-        cout << "Token(" << lx.tokname(lx.toktype()) << ", "
-             << lx.substring() << ")" << endl;
-    } while (lx.toktype() != TokenType::eof && lx.toktype() != TokenType::error);
+    }
 }

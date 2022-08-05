@@ -138,7 +138,6 @@ public:
     std::vector<StateArg> args;
     std::vector<Substitute> subs;
     std::vector<Branch> branches;
-    Action deflt;
     void apply_chr(unsigned char imm);
     void apply_state(const Call &newcall);
     std::string rname() const;

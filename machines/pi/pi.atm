@@ -101,11 +101,14 @@ resubst(E) {
 }
 
 singleterm(E) {
+  # we used all rationals once
+  # add the next odd number and start again
   ['%'] =' ' fl('_', newterm(fr('$', r(singleterm_changepn(
     r(r(r(subst(rfr('a', resubst(singleterm(E))))))),
     r(r(r(substbig(rfr('a', resubst(singleterm(E)))))))
   )))))
 
+  # get the next digit of the next rational
   [def] fl('%', p(' ', rfr(' ', p('%', l(step(
     fr4('a', 'b', 'A', 'B', repl(calc1(fl('$', lfl('$', l(singleterm(E))))))),
     fr4('a', 'b', 'A', 'B', repl(resubst(fl('$', lfl('$', l(singleterm(E)))))))

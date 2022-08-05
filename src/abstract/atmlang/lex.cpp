@@ -1,101 +1,206 @@
+#include <iostream>
 #include <cctype>
 #include <stdexcept>
 #include <map>
 
 #include "lex.hpp"
 
+using std::ostream; using std::endl;
 using std::map;
 using std::string;
 using std::runtime_error;
 
 namespace lex {
 
-string Lexer::substring() const {
-    if (type == eof) {
+string Token::name(TokenType t) {
+    static string names[] = {
+        "eof", "error", "sym", "ident",
+        "movel", "mover", "print", "lcurly", "rcurly",
+        "lpar", "rpar",
+        "lbracket", "rbracket",
+        "comma", "varsym",
+        "def", "accept", "reject",
+        "range"
+    };
+    return names[t];
+}
+
+string Token::substring() const {
+    if (type == TokenType::eof)
         return "";
+    return lx->s.substr(offset, len);
+}
+
+string Token::repr() const {
+    return "Token(type=" + name(type)
+        + ", len=" + std::to_string(len)
+        + ", offset=" + std::to_string(offset)
+        + ", line=" + std::to_string(line)
+        + ", lineoff=" + std::to_string(lineoff)
+        + ", str=\"" + substring()  + "\")";
+}
+
+ostream &Token::perror(ostream &os, const string &msg) const {
+
+    if (type == TokenType::eof) {
+        os << "eof: " << msg << endl;
+        return os;
     }
-    return s.substr(offset, len);
+
+    os << line << ":" << (offset - lineoff + 1) << ": " << msg << endl;
+    os << " | ";
+    for (size_type index = lineoff; lx->s[index] != '\n' && lx->s[index] != '\0'; index++)
+        os << lx->s[index];
+    os << endl;
+    os << " | ";
+    for (unsigned int i = 0; i < offset - lineoff; i++)
+        os << " ";
+    for (unsigned int i = 0; i < len; i++)
+        os << "~";
+    os << endl;
+
+    return os;
+}
+
+bool isident1(char c) {
+    return isalpha(c) || c == '_';
+}
+
+bool isident2(char c) {
+    return isalpha(c) || c == '_' || (c >= '0' && c <= '9');
+}
+
+char Lexer::getch() {
+    tok.len++;
+
+    pos_old = pos;
+    if (pos.c == '\n') {
+        pos.line++;
+        pos.lineoff = pos.next;
+    }
+    pos.c = s[pos.next++];
+    return pos.c;
+}
+
+void Lexer::ungetch() {
+    tok.len--;
+
+    pos = pos_old;
+}
+
+void Lexer::reset() {
+    pos = pos_old = {'\0', 0, 1, 0};
+    done = false;
+    lex();
+}
+
+bool contains_keyword(const char *start, const string &keyword) {
+    for (unsigned int i = 0; i < keyword.size(); i++) {
+        if (start[i] != keyword[i])
+            return false;
+    }
+    return !isident2(start[keyword.size()]); // guard against identifiers
+}
+
+void Lexer::remove_whitespace() {
+    while (true) {
+        while (isspace(getch()))
+            ;
+        ungetch();
+        if (getch() == '#') {
+            char c;
+            do {
+                c = getch();
+            } while (c != '\n' && c != '\0');
+            ungetch();
+            if (c == '\0')
+                return;
+        } else {
+            ungetch();
+            return;
+        }
+    }
+}
+
+char Lexer::newtoken() {
+    char c = getch();
+    tok = Token(error, 1, pos.next - 1, pos.line, pos.lineoff, this);
+    return c;
 }
 
 void Lexer::lex() {
     if (done)
         return;
 
-    while(isspace(s[cur]))
-        ++cur;
+    remove_whitespace();
 
     static map<char, TokenType> single_chars = {
         {'<', movel}, {'>', mover},
         {'{', lcurly}, {'}', rcurly},
         {'(', lpar}, {')', rpar},
         {'[', lbracket}, {']', rbracket},
-        {'=', print}, {',', comma}, {'$', chr_var}
+        {'=', print}, {',', comma}, {'$', varsym},
+        {'-', range}
     };
 
-    char c = s[cur];
+    static map<string, TokenType> keywords = {
+        {"def", def}, {"accept", accept}, {"reject", reject}
+    };
+
+    char c = newtoken();
+
     auto single_found = single_chars.find(c);
     if (c == '\0') {
         done = true;
-        settoken(eof, 1, cur);
+        tok.type = eof;
         return;
     } else if (single_found != single_chars.end()) {
-        settoken(single_found->second, 1, cur);
-        ++cur;
+        tok.type = single_found->second;
         return;
     } else if (c == '\'') {
-        char c1 = s[cur + 1];
+        char c1 = getch();
         if (c1 == 'x') {
-            char c2 = s[cur + 2];
+            char c2 = getch();
             if (c2 == '\'') {
-                settoken(chr_imm, 1, cur + 1);
-                cur += 3;
+                tok.type = sym;
                 return;
             } else if (isxdigit(c2)) {
-                char c3 = s[cur + 3];
+                char c3 = getch();
                 if (isxdigit(c3)) {
-                    char c4 = s[cur + 4];
+                    char c4 = getch();
                     if (c4 == '\'') {
-                        settoken(chr_imm, 3, cur + 1);
-                        cur += 5;
+                        tok.type = sym;
                         return;
                     }
                 }
             }
         } else if (c1 >= ' ' && c1 <= '~') {
-            char c2 = s[cur + 2];
+            char c2 = getch();
             if (c2 == '\'') {
-                settoken(chr_imm, 1, cur + 1);
-                cur += 3;
+                tok.type = sym;
                 return;
             }
         }
     } else if (isalpha(c) || c == '_') {
-        auto start = cur;
-        ++cur;
-        while (isalnum(s[cur]) || s[cur] == '_')
-            ++cur;
-        settoken(ident, cur - start, start);
+        
+        for (auto it = keywords.begin(); it != keywords.end(); ++it) {
+            if (contains_keyword(&s[tok.offset], it->first)) {
+                for (unsigned int i = 1; i < it->first.size(); i++) // already getch() one
+                    getch();
+                tok.type = it->second;
+                return;
+            }
+        }
+
+        while (isident2(getch()))
+            ;
+        ungetch();
+        tok.type = ident;
         return;
     }
 
+    // failed
     done = true;
-    settoken(error, 1, cur);
-}
-
-string Lexer::tokname(TokenType t) {
-    static string names[] = {
-        "eof", "error", "chr_imm", "ident",
-        "movel", "mover", "print", "lcurly", "rcurly",
-        "lpar", "rpar", "lbracket", "rbracket",
-        "comma", "chr_var"
-    };
-    return names[t];
-}
-
-void Lexer::expect(TokenType t) {
-    if (type != t)
-        throw runtime_error("expected " + tokname(t) + " but got " + tokname(type));
-    lex();
 }
 
 }
