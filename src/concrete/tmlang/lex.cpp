@@ -52,9 +52,9 @@ ostream &Token::perror(ostream &os, const string &msg) const {
         os << lx->s[index];
     os << endl;
     os << " | ";
-    for (int i = 0; i < offset - lineoff; i++)
+    for (unsigned int i = 0; i < offset - lineoff; i++)
         os << " ";
-    for (int i = 0; i < len; i++)
+    for (unsigned int i = 0; i < len; i++)
         os << "~";
     os << endl;
 
@@ -94,16 +94,11 @@ void Lexer::reset() {
 }
 
 bool contains_keyword(const char *start, const string &keyword) {
-    for (int i = 0; i < keyword.size(); i++) {
+    for (unsigned int i = 0; i < keyword.size(); i++) {
         if (start[i] != keyword[i])
             return false;
     }
     return !isident2(start[keyword.size()]); // guard against identifiers
-}
-
-void Lexer::lex() {
-    _lex();
-    std::cout << tok.repr() << std::endl;
 }
 
 void Lexer::remove_whitespace() {
@@ -132,7 +127,7 @@ char Lexer::newtoken() {
     return c;
 }
 
-void Lexer::_lex() {
+void Lexer::lex() {
     if (done)
         return;
 
@@ -188,7 +183,7 @@ void Lexer::_lex() {
         
         for (auto it = keywords.begin(); it != keywords.end(); ++it) {
             if (contains_keyword(&s[tok.offset], it->first)) {
-                for (int i = 1; i < it->first.size(); i++) // already getch() one
+                for (unsigned int i = 1; i < it->first.size(); i++) // already getch() one
                     getch();
                 tok.type = it->second;
                 return;

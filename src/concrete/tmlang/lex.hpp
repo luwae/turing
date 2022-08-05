@@ -64,7 +64,6 @@ public:
         { lex(); }
     const Token &gettok() { return tok; }
     void lex();
-    void _lex();
     void reset();
 private:
     char getch();

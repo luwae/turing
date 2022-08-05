@@ -53,18 +53,18 @@ void Parser::parse() {
     } while (lx.gettok().gettype() != TokenType::eof);
 
     // resolve states
-    for (int i = 0; i < resolve.size(); i++) {
-        auto found = statedescs.find(real_ident(resolve[i].def));
+    for (auto it = resolve.begin(); it != resolve.end(); ++it) {
+        auto found = statedescs.find(real_ident(it->def));
         if (found == statedescs.end()) {
-            resolve[i].def.perror(cout, "no fitting state definition");
+            it->def.perror(cout, "no fitting state definition");
             throw runtime_error("fail");
         }
-        states[resolve[i].si].branches[resolve[i].bi].action.next = found->second.index;
+        states[it->si].branches[it->bi].action.next = found->second.index;
     }
     
     // copy states to machine
-    for (int i = 0; i < states.size(); i++) {
-        tm.add_state(states[i]);
+    for (auto it = states.begin(); it != states.end(); ++it) {
+        tm.add_state(*it);
     }
 }
 

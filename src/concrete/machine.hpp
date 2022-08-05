@@ -23,10 +23,10 @@ public:
 };
 
 enum TerminateType {
-    term_cont,
-    term_acc,
-    term_rej,
-    term_fail,
+    term_cont = 0,
+    term_acc = 1,
+    term_rej = 2,
+    term_fail = 3,
 };
 
 class Action {

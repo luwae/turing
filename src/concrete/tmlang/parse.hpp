@@ -7,7 +7,7 @@
 #include <map>
 
 #include "lex.hpp"
-#include "machine.hpp"
+#include "../machine.hpp"
 
 namespace parse {
 

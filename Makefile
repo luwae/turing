@@ -1,14 +1,18 @@
 CXX=g++
 CPPFLAGS=-Wall
 
-CCR_SRCS=tape.cpp machine.cpp lex.cpp parse.cpp turing.cpp
-CCR_OBJS_DIR=$(patsubst %.cpp,src/concrete/%.o,$(CCR_SRCS))
+TM_SRCS=tape.cpp machine.cpp
+TM_OBJS_P=$(patsubst %.cpp,src/concrete/%.o,$(TM_SRCS))
 
-concrete: $(CCR_OBJS_DIR)
-	$(CXX) $(CPPFLAGS) -o turing $^
+TMLANG_SRCS=lex.cpp parse.cpp
+TMLANG_OBJS_P=$(patsubst %.cpp,src/concrete/tmlang/%.o,$(TMLANG_SRCS))
+
+tmrun: $(TM_OBJS_P) $(TMLANG_OBJS_P) src/concrete/tmrun.o
+	$(CXX) $(CPPFLAGS) -o tmrun $^
 
 clean:
-	rm src/concrete/*.o
-	rm turing
+	rm -f src/concrete/*.o
+	rm -f src/concrete/tmlang/*.o
+	rm -f tmrun
 
 .PHONY: clean
