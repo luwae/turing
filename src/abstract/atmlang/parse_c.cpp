@@ -42,7 +42,7 @@ void Parser::parse() {
 void Parser::parse_s() {
     do {
         expect(lx, TokenType::ident, false);
-        string name = lx.gettok();
+        string name = lx.gettok().substring();
         auto found = statedescs.find(name);
         if (found != statedescs.end()) {
             lx.gettok().perror(cout, "duplicate state name");
@@ -140,14 +140,17 @@ void Parser::parse_statebody2(State &s) {
     }
 }
 
-int Parser::find_state_arg(State &s, StateArg::Type t) {
+int Parser::find_state_arg(State &s, StateArg::Type t, bool error = true) {
     for (int i = 0; i < s.args.size(); i++) {
         if (s.args[i].type == t && s.args[i].name == lx.gettok().substring()) {
             return i;
         }
     }
-    lx.gettok().perror("unknown arg");
-    throw runtime_error("fail");
+    if (error) {
+        lx.gettok().perror("unknown arg");
+        throw runtime_error("fail");
+    }
+    return -1;
 }
 
 Sym Parser::parse_sym(State &s) {
@@ -180,140 +183,76 @@ void Parser::parse_symargs(State &s, Branch &b) {
     }
 }
 
-
-
-
-// ----------------------------------------------------------
-
-
-
-// TODO old stuff
-void Parser::parse_statebody(State &s) {
-    while (lx.gettok().gettype() == TokenType::lbracket) { // new branch
-        lx.lex();
-        Branch b;
-        if (lx.gettok().gettype() == TokenType::def) {
-            b.symset_invert = true;
-            lx.lex();
-            expect(lx, TokenType::rbracket);
-            parse_actions(b.action);
-            parse_nextstate(s, b.action);
-
-            s.branches.push_back(b);
-            return; // default is last branch
-        } else if (lx.gettok().gettype() == TokenType::sym || lx.gettok().gettype() == TokenType::varsym) {
-            // TODO Different behaviour on sym and varsym
-            do {
-            	unsigned char sym = convert_immediate(lx.gettok().substring());
-            	b.syms.insert(sym);
-            	lx.lex();
-            	if (lx.gettok().gettype() == TokenType::range) {
-            	   lx.lex();
-            	   expect(lx, TokenType::chr, false);
-            	   unsigned char stop = convert_immediate(lx.gettok().substring());
-            	   if (stop <= sym) {
-            	   	lx.gettok().perror(cout, "invalid range");
-            	   	throw runtime_error("fail");
-            	   }
-            	   for (sym++; sym <= stop; sym++) // first symbol is already inserted
-            	       b.syms.insert(sym);
-            	   lx.lex();
-            	}
-            	if (lx.gettok().gettype() == TokenType::comma) {
-            	    lx.lex();
-            	    expect(lx, TokenType::chr, false);
-            	} else {
-            	    break;
-            	}
-            } while (true);
-            
-            expect(lx, TokenType::rbracket);
-            parse_actions(b.action);
-            parse_nextstate(s, b.action);
-            // further branches may follow
-        } else {
-            lx.gettok().perror(cout, "branch specifier must be either 'def' or a list of symbols or symbol arguments");
-            throw runtime_error("fail");
-        }
-
-        s.branches.push_back(b);
-    }
-}
-
-void Parser::parse_branchspec(State &s, Branch &b) {
-    while (lx.gettok().gettype() == TokenType::sym || lx.gettok().gettype() == TokenType::varsym) {
-        if(lx.gettok().gettype() == TokenType::sym) {
-            unsigned char sym = convert_immediate(lx.gettok().substring());
-    	    b.syms.insert(sym);
-    	    lx.lex();
-        } else {
-            // TODO
-        }
-        
-        
-        
-        
-    	
-    	if (lx.gettok().gettype() == TokenType::range) {
-    	   lx.lex();
-    	   expect(lx, TokenType::chr, false);
-    	   unsigned char stop = convert_immediate(lx.gettok().substring());
-    	   if (stop <= sym) {
-    	   	lx.gettok().perror(cout, "invalid range");
-    	   	throw runtime_error("fail");
-    	   }
-    	   for (sym++; sym <= stop; sym++) // first symbol is already inserted
-    	       b.syms.insert(sym);
-    	   lx.lex();
-    	}
-    	if (lx.gettok().gettype() == TokenType::comma) {
-    	    lx.lex();
-    	    expect(lx, TokenType::chr, false);
-    	} else {
-    	    break;
-    	}
-    }
-}
-
-void Parser::parse_symargs(Branch &b) {
-
-}
-
-void Parser::parse_actions(Action &a) {
+void Parser::parse_actions(State &s, Branch &b) {
     while (true) {
         if (lx.gettok().gettype() == TokenType::movel) {
-            a.primitives.emplace_back(PrimitiveType::pt_movel);
-            lx.lex();
+            b.action.primitives.emplace_back(Primitive::Type::pt_movel);
         } else if (lx.gettok().gettype() == TokenType::mover) {
-            a.primitives.emplace_back(PrimitiveType::pt_mover);
-            lx.lex();
+            b.action.primitives.emplace_back(Primitive::Type::pt_mover);
         } else if (lx.gettok().gettype() == TokenType::print) {
             lx.lex();
-            expect(lx, TokenType::chr, false);
-            a.primitives.emplace_back(PrimitiveType::pt_print, convert_immediate(lx.gettok().substring()));
-            lx.lex();
+            b.action.primitives.push_back(parse_sym(s));
         } else {
-            return; // found no more actions
+            break;
         }
     }
 }
 
-void Parser::parse_nextstate(const State &s, Action &a) {
-    if (lx.gettok().gettype() == TokenType::accept) {
-        a.term = TerminateType::term_acc;
-        lx.lex();
-    } else if (lx.gettok().gettype() == TokenType::reject) {
-        a.term = TerminateType::term_rej;
-        lx.lex();
-    } else if (lx.gettok().gettype() == TokenType::ident) {
-        a.term = TerminateType::term_cont;
-        resolve.emplace_back(states.size(), s.branches.size(), lx.gettok());
-        lx.lex();
-    } else if (lx.gettok().gettype() == TokenType::rcurly || lx.gettok().gettype() == TokenType::lbracket) { // default: stay
-        a.term = TerminateType::term_cont;
-        a.next = states.size(); // current state
+void Parser::parse_nextstate(State &s, Branch &b) {
+    if (lx.gettok().gettype() == TokenType::lbracket || lx.gettok().gettype() == TokenType::rcurly) {
+        return;
     }
-    // TODO else fail?
+    b.action.call = std::move(parse_call(s, b));
+}
+
+Call Parser::parse_call(State &s) {
+    Call c;
+    if (lx.gettok().gettype() == TokenType::accept) {
+        c.type = ct_state_accept;
+        return c;
+    } else if (lx.gettok().gettype() == TokenType::reject) {
+        c.type = ct_state_reject;
+        return c;
+    }
+    expect(lx, TokenType::ident, false);
+    string name = lx.gettok().substring();
+    lx.lex();
+    int index = find_state_arg(s, StateArg::type::sat_state_var, false);
+    if (index >= 0) {
+        c.type = ct_state_var;
+        c.index = index;
+        // arguments not possible
+    } else {
+        c.type = ct_state_imm;
+        c.name = name;
+        parse_callargs(s, c);
+    }
+    return c;
+}
+
+void Parser::parse_callargs(State &s, Call &c) {
+    if (lx.gettok().gettype() == TokenType::lpar) {
+        lx.lex();
+        parse_callargs2(s, c);
+        expect(lx, TokenType::rpar);
+    }
+}
+
+void Parser::parse_callargs2(State &s, Call &c) {
+    if (lx.gettok().gettype() == TokenType::sym || lx.gettok().gettype() == TokenType::varsym) {
+        c.args.emplace_back(parse_sym(s));
+    } else {
+        c.args.emplace_back(std::move(parse_call(s)));
+    }
+    parse_callargs3(s, c);
+}
+
+void Parser::parse_callargs3(State &s, Call &c) {
+    if (lx.gettok().gettype() == TokenType::rpar) {
+        return;
+    }
+    expect(lx, TokenType::comma);
+    parse_callargs2(s, c);
 }
 
 } // namespace parse

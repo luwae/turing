@@ -27,12 +27,10 @@ class Call;
 class CallArg {
 public:
     enum Type {
-        cat_chr_var = 0,
-        cat_chr_imm,
+        cat_sym = 0,
         cat_call
     };
-    CallArg(int ind): type(cat_chr_var), index(ind) { }
-    CallArg(unsigned char c): type(cat_chr_imm), imm(c) { }
+    CallArg(Sym sym): type(cat_sym), sym(sym) { }
     CallArg(std::unique_ptr<Call> p): type(cat_call), call(std::move(p)) { }
     CallArg() = default;
     CallArg(const CallArg &that);
@@ -40,8 +38,7 @@ public:
     CallArg &operator=(const CallArg &that);
     CallArg &operator=(CallArg &&that) = default;
     Type type;
-    int index;
-    unsigned char imm;
+    Sym sym;
     std::unique_ptr<Call> call;
     void apply_chr(int arg_ind, unsigned char imm);
     void apply_state(int arg_ind, const Call &newcall);
@@ -76,15 +73,14 @@ public:
         pt_print
     };
     Primitive(Type t): type(t) { }
-    Primitive(int ind): type(pt_print), arg(ind) { }
-    Primitive(unsigned char c): type(pt_print), arg(c) { }
+    Primitive(Sym sym): type(pt_print), sym(sym) { }
     Primitive() = default;
     Primitive(const Primitive &that) = default;
     Primitive(Primitive &&that) = default;
     Primitive &operator=(const Primitive &that) = default;
     Primitive &operator=(Primitive &&that) = default;
     Type type;
-    CallArg arg;
+    Sym sym;
     void apply_chr(int arg_ind, unsigned char imm);
 };
 

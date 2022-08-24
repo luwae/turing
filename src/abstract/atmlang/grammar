@@ -31,7 +31,7 @@ Statebody2 -> {'def'} | {sym, '$'}
 Symargs    -> {']'} | {','}
 Symrange   -> {']', ','} | {'-'}
 Sym        -> {sym} | {'$'}
-Actions    -> eps | {'>'} | {'<'} | {=}
+Actions    -> {'}', '[', accept, reject, id} | {'>'} | {'<'} | {=}
 Nextstate  -> {'}', '['} | {accept, reject, id}
 Call       -> {accept} | {reject} | {id}
 Callargs   -> {')', ',', '}', '['} | {'('}
