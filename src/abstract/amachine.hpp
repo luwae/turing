@@ -10,7 +10,7 @@
 class StateArg {
 public:
     enum Type {
-        sat_chr_var = 0,
+        sat_sym_var = 0,
         sat_state_var
     };
     StateArg(Type t, std::string n): type(t), name(n) { }
@@ -101,6 +101,33 @@ public:
     void apply_state(int arg_ind, const Call &newcall);
 };
 
+class Sym {
+public:
+    Sym() = default;
+    Sym(bool var, int value): var(var), value(value) { }
+    Sym(const Sym &that) = default;
+    Sym(Sym &&that) = default;
+    Sym &operator=(const Sym &that) = default;
+    Sym &operator=(const Sym &&that) = default;
+    bool var;
+    int value;
+}
+
+class SymSpec {
+public:
+    enum Type {
+        cs_char = 0,
+        cs_charrange,
+        cs_charall
+    };
+    SymSpec(): type(cs_charall) { }
+    SymSpec(Sym l): type(cs_char), left(l) { }
+    SymSpec(Sym l, Sym r): type(cs_charrange), left(l), right(r) { }
+    Type type;
+    Sym left;
+    Sym right;
+}
+
 class Branch {
 public:
     Branch() = default;
@@ -108,7 +135,7 @@ public:
     Branch(Branch &&that) = default;
     Branch &operator=(const Branch &that) = default;
     Branch &operator=(Branch &&that) = default;
-    std::vector<CallArg> chars;
+    std::vector<SymSpec> syms;
     Action action;
     void apply_chr(int arg_ind, unsigned char imm);
     void apply_state(int arg_ind, const Call &newcall);
