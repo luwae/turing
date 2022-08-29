@@ -11,13 +11,6 @@
 
 namespace parse {
 
-struct NameResolve {
-    NameResolve(unsigned int si, unsigned int bi, lex::Token def): si(si), bi(bi), def(def) { }
-    unsigned int si;
-    unsigned int bi;
-    lex::Token def;
-};
-
 struct StateDesc {
     unsigned int index;
     lex::Token def;
@@ -30,9 +23,7 @@ private:
     void parse();
     lex::Lexer lx;
     std::map<std::string, StateDesc> statedescs;
-    std::vector<NameResolve> resolve;
     std::vector<State> states;
-    TuringMachine &tm;
 };
 
 }

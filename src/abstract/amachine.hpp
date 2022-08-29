@@ -112,13 +112,13 @@ public:
 class SymSpec {
 public:
     enum Type {
-        cs_char = 0,
-        cs_charrange,
-        cs_charall
+        ss_sym = 0,
+        ss_symrange,
+        ss_symall
     };
-    SymSpec(): type(cs_charall) { }
-    SymSpec(Sym l): type(cs_char), left(l) { }
-    SymSpec(Sym l, Sym r): type(cs_charrange), left(l), right(r) { }
+    SymSpec(): type(ss_symall) { }
+    SymSpec(Sym l): type(ss_sym), left(l) { }
+    SymSpec(Sym l, Sym r): type(ss_symrange), left(l), right(r) { }
     Type type;
     Sym left;
     Sym right;

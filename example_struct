@@ -1,0 +1,50 @@
+main {
+  [def] p('0', accept)
+}
+
+p($a, E) {
+  [def] =$a E
+}
+
+State s
+ .name = "main"
+ .branches = [
+  Branch{
+   .syms = [
+    SymSpec{.type = cs_charall}
+   ]
+   .action = Action{
+    .call = Call{
+     .type = ct_state_imm
+     .name = "p"
+     .args = [
+      CallArg{.type = cat_sym, .sym = Sym{.var = false, .value = '0'}}
+      CallArg{.type = cat_call, .call = Call{.type = ct_state_accept}}
+     ]
+    }
+   }
+  }
+ ]
+
+State s
+ .name = "p"
+ .args = [
+  StateArg{sat_sym_var, "a"}
+  StateArg{sat_state_var, "E"}
+ ]
+ .branches = [
+  Branch {
+   .syms = [
+    SymSpec{.type = cs_charall}
+   ]
+   .action = Action{
+    .primitives = [
+     Primitive{.type = pt_print, .sym = Sym{.var = true, .value = 0}}
+    ]
+    .call = Call{
+     .type = ct_state_var
+     .index = 1
+    }
+   }
+  }
+ ]

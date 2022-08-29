@@ -19,24 +19,45 @@ void expect(Lexer &lx, TokenType tt, bool lex_after = true) {
         lx.lex();
 }
 
+string hexstring(int value) {
+    string s;
+    char high = (value >> 4) & 0x0f;
+    char low = value & 0x0f;
+    s.push_back((high >= 10) ? 'a' + (high - 10) : '0' + high);
+    s.push_back((low >= 10) ? 'a' + (low - 10) : '0' + low);
+    return s;
+}
+
 void Parser::parse() {
     parse_s();
     
-    // TODO
-    // resolve states
-    for (auto it = resolve.begin(); it != resolve.end(); ++it) {
-        auto found = statedescs.find(real_ident(it->def));
-        if (found == statedescs.end()) {
-            it->def.perror(cout, "no fitting state definition");
-            throw runtime_error("fail");
-        }
-        states[it->si].branches[it->bi].action.next = found->second.index;
-    }
+    // expand
     
-    // copy states to machine
-    for (auto it = states.begin(); it != states.end(); ++it) {
-        tm.add_state(*it);
+    if (states[0].args.size() > 0) {
+        throw runtime_error("main state is not allowed to have arguments");
     }
+    cout << "\"" << states[0].name << "\" {\n"; // use strings for all names
+    for (Branch &b : states[0].branches) {
+        cout << "  [";
+        for (int i = 0; i < b.syms.size(); i++) {
+            if (ss.type == SymSpec::Type::ss_symall) {
+                cout << "def";
+            } else if (ss.type == SymSpec::Type::ss_sym) {
+                // assume var is false!
+                cout << "'x" << hexstring(ss.left.value) << "'";
+            } else if (ss.type == SymSpec::Type::ss_symrange) {
+                // assume var is false!
+                cout << "'x" << hexstring(ss.left.value) << "'-'x" << hexstring(ss.right.value) << "'";
+            }
+            
+            if (i != b.syms.size() - 1)
+                cout << ", ";
+        }
+        cout << "  ] ";
+        for (Primitive &p: b.action.primitives) {
+            // TODO
+        }
+    } 
 }
 
 void Parser::parse_s() {
@@ -68,15 +89,20 @@ void Parser::parse_s() {
 }
 
 void Parser::parse_stateargs(State &s) {
-    if (lx.gettok().gettype() == TokenType::lcurly)
+    if (lx.gettok().gettype() == TokenType::lcurly) {
         return;
-    expect(lx, TokenType::lpar);
-    parse_stateargs2(s);
-    while (lx.gettok().gettype() == TokenType::comma) {
+    } else if (lx.gettok().gettype() == TokenType::lpar) {
         lx.lex();
         parse_stateargs2(s);
+        while (lx.gettok().gettype() == TokenType::comma) {
+            lx.lex();
+            parse_stateargs2(s);
+        }
+        expect(lx, TokenType::rpar);
+    } else {
+        lx.gettok().perror(cout, "expected state args or state body");
+        throw runtime_error("fail");
     }
-    expect(lx, TokenType::rpar);
 }
 
 void Parser::parse_stateargs2(State &s) {
@@ -111,8 +137,9 @@ unsigned char convert_immediate(const string &s) {
 }
 
 void Parser::parse_statebody(State &s) {
-    if (lx.gettok().gettype() == TokenType::rcurly)
+    if (lx.gettok().gettype() == TokenType::rcurly) {
         return;
+    }
     if (lx.gettok().gettype() != TokenType::lbracket) {
         lx.gettok().perror("expected branch");
         throw runtime_error("fail");
@@ -123,20 +150,23 @@ void Parser::parse_statebody(State &s) {
 
 void Parser::parse_statebody2(State &s) {
     if (lx.gettok().gettype() == TokenType::def) {
+        lx.lex();
         Branch b;
         b.syms.emplace_back();
+        expect(lx, TokenType::rbracket);
         parse_actions(s, b);
         parse_nextstate(s, b);
         s.branches.push_back(b);
     } else {
         Branch b;
-        parse_sym(s);
         parse_symrange(s, b, parse_sym(s, b));
         parse_symargs(s, b);
         expect(lx, TokenType::rbracket);
         parse_actions(s, b);
         parse_nextstate(s, b);
         s.branches.push_back(b);
+        // repeat
+        parse_statebody(s);
     }
 }
 
@@ -155,11 +185,15 @@ int Parser::find_state_arg(State &s, StateArg::Type t, bool error = true) {
 
 Sym Parser::parse_sym(State &s) {
     if (lx.gettok().gettype() == TokenType::sym) {
-        return Sym(false, convert_immediate(lx.gettok().substring())); 
+        Sym s(false, convert_immediate(lx.gettok().substring())); 
+        lx.lex();
+        return s;
     } else if (lx.gettok().gettype() == TokenType::varsym) {
     	lx.lex();
     	expect(lx, TokenType::ident, false);
-    	return Sym(true, find_state_arg(s, StateArg::Type::sat_sym_var));
+    	Sym s(true, find_state_arg(s, StateArg::Type::sat_sym_var));
+    	lx.lex();
+    	return s;
     }
 }
 
@@ -186,12 +220,14 @@ void Parser::parse_symargs(State &s, Branch &b) {
 void Parser::parse_actions(State &s, Branch &b) {
     while (true) {
         if (lx.gettok().gettype() == TokenType::movel) {
+            lx.lex();
             b.action.primitives.emplace_back(Primitive::Type::pt_movel);
         } else if (lx.gettok().gettype() == TokenType::mover) {
+            lx.lex();
             b.action.primitives.emplace_back(Primitive::Type::pt_mover);
         } else if (lx.gettok().gettype() == TokenType::print) {
             lx.lex();
-            b.action.primitives.push_back(parse_sym(s));
+            b.action.primitives.emplace_back(parse_sym(s));
         } else {
             break;
         }
@@ -208,9 +244,11 @@ void Parser::parse_nextstate(State &s, Branch &b) {
 Call Parser::parse_call(State &s) {
     Call c;
     if (lx.gettok().gettype() == TokenType::accept) {
+        lx.lex();
         c.type = ct_state_accept;
         return c;
     } else if (lx.gettok().gettype() == TokenType::reject) {
+        lx.lex();
         c.type = ct_state_reject;
         return c;
     }
