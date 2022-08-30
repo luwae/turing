@@ -1,0 +1,7 @@
+main {
+  [def] p('0', accept)
+}
+
+p($a, E) {
+  [def] =$a E
+}

@@ -32,13 +32,4 @@ int main(int argc, char *argv[]) {
     cout << input << endl;
    
     Parser ps(input);
-    cout << "finished parsing" << endl;
-
-    for (const auto &s: ps.states)
-        cout << s << "\n";
-    cout << "\n\n\n" << endl;
-    
-    State maincopy = ps.states[0];
-    set<string> rnames;
-    maincopy.expand(cout, ps.states, rnames);
 }

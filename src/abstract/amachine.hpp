@@ -7,6 +7,19 @@
 #include <string>
 #include <vector>
 
+class Sym {
+public:
+    Sym() = default;
+    Sym(bool var, int value): var(var), value(value) { }
+    Sym(const Sym &that) = default;
+    Sym(Sym &&that) = default;
+    Sym &operator=(const Sym &that) = default;
+    Sym &operator=(Sym &&that) = default;
+    bool var;
+    int value;
+    void apply_sym(int arg_ind, unsigned char imm);
+};
+
 class StateArg {
 public:
     enum Type {
@@ -40,14 +53,15 @@ public:
     Type type;
     Sym sym;
     std::unique_ptr<Call> call;
-    void apply_chr(int arg_ind, unsigned char imm);
+    void apply_sym(int arg_ind, unsigned char imm);
     void apply_state(int arg_ind, const Call &newcall);
 };
 
 class Call {
 public:
     enum Type {
-        ct_state_var = 0,
+        ct_state_none = 0, // TODO is this needed? or just NULL otherwise?
+        ct_state_var,
         ct_state_imm,
         ct_state_accept,
         ct_state_reject
@@ -61,7 +75,7 @@ public:
     int index;
     std::string name;
     std::vector<CallArg> args;
-    void apply_chr(int arg_ind, unsigned char imm);
+    void apply_sym(int arg_ind, unsigned char imm);
     void apply_state(int arg_ind, const Call &newcall);
 };
 
@@ -81,7 +95,7 @@ public:
     Primitive &operator=(Primitive &&that) = default;
     Type type;
     Sym sym;
-    void apply_chr(int arg_ind, unsigned char imm);
+    void apply_sym(int arg_ind, unsigned char imm);
 };
 
 class Action {
@@ -93,21 +107,9 @@ public:
     Action &operator=(Action &&that) = default;
     std::vector<Primitive> primitives;
     std::unique_ptr<Call> call;
-    void apply_chr(int arg_ind, unsigned char imm);
+    void apply_sym(int arg_ind, unsigned char imm);
     void apply_state(int arg_ind, const Call &newcall);
 };
-
-class Sym {
-public:
-    Sym() = default;
-    Sym(bool var, int value): var(var), value(value) { }
-    Sym(const Sym &that) = default;
-    Sym(Sym &&that) = default;
-    Sym &operator=(const Sym &that) = default;
-    Sym &operator=(const Sym &&that) = default;
-    bool var;
-    int value;
-}
 
 class SymSpec {
 public:
@@ -122,7 +124,8 @@ public:
     Type type;
     Sym left;
     Sym right;
-}
+    void apply_sym(int arg_ind, unsigned char imm);
+};
 
 class Branch {
 public:
@@ -133,7 +136,7 @@ public:
     Branch &operator=(Branch &&that) = default;
     std::vector<SymSpec> syms;
     Action action;
-    void apply_chr(int arg_ind, unsigned char imm);
+    void apply_sym(int arg_ind, unsigned char imm);
     void apply_state(int arg_ind, const Call &newcall);
 };
 
@@ -144,8 +147,8 @@ public:
     Substitute(Substitute &&that) = default;
     Substitute &operator=(const Substitute &that);
     Substitute &operator=(Substitute &&that) = default;
-    Substitute(unsigned char i, std::unique_ptr<Call> c):
-        imm(i), call(std::move(c)) {}
+    Substitute(unsigned char imm): imm(imm), call(nullptr) {}
+    Substitute(std::unique_ptr<Call> call): call(std::move(call)) { }
     unsigned char imm;
     std::unique_ptr<Call> call;
 };
@@ -161,17 +164,19 @@ public:
     std::vector<StateArg> args;
     std::vector<Substitute> subs;
     std::vector<Branch> branches;
-    void apply_chr(unsigned char imm);
+    void apply_sym(unsigned char imm);
     void apply_state(const Call &newcall);
-    std::string rname() const;
-    void expand(std::ostream &os, const std::vector<State> &states, std::set<std::string> &rstates);
+    std::string expandedname() const;
+    void expand(std::ostream &os, const std::vector<State> &states, std::set<std::string> &expandedstates);
 };
 
+std::ostream &operator<<(std::ostream &os, const Sym &s);
 std::ostream &operator<<(std::ostream &os, const StateArg &sa);
 std::ostream &operator<<(std::ostream &os, const CallArg &ca);
 std::ostream &operator<<(std::ostream &os, const Call &c);
 std::ostream &operator<<(std::ostream &os, const Primitive &p);
 std::ostream &operator<<(std::ostream &os, const Action &a);
+std::ostream &operator<<(std::ostream &os, const SymSpec &ss);
 std::ostream &operator<<(std::ostream &os, const Branch &b);
 std::ostream &operator<<(std::ostream &os, const State &s);
 

@@ -32,6 +32,32 @@ State s
   StateArg{sat_sym_var, "a"}
   StateArg{sat_state_var, "E"}
  ]
+ .subs = [
+  Substitute{.imm = '0'}
+  Substitute{.call = Call{.type = ct_state_accept}}
+ ]
+ .branches = [
+  Branch {
+   .syms = [
+    SymSpec{.type = cs_charall}
+   ]
+   .action = Action{
+    .primitives = [
+     Primitive{.type = pt_print, .sym = Sym{.var = false, .value = '0'}}
+    ]
+    .call = Call{
+     .type = ct_state_accept
+    }
+   }
+  }
+ ]
+
+State s
+ .name = "p"
+ .args = [
+  StateArg{sat_sym_var, "a"}
+  StateArg{sat_state_var, "E"}
+ ]
  .branches = [
   Branch {
    .syms = [
