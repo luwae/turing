@@ -1,0 +1,13 @@
+main {
+  ['_'] accept
+  [def] obfuscate('X', r(main))
+}
+
+r(E) {
+  [def] > E
+}
+
+obfuscate($a, E) {
+  ['a'-'z', 'A'-'Z'] =$a E
+  [def] E
+}

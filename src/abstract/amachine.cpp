@@ -175,7 +175,7 @@ string State::expandedname() const {
     
     ostringstream os;
     os << name << "(";
-    for (int i = 0; i != subs.size(); ++i) {
+    for (unsigned int i = 0; i != subs.size(); ++i) {
         if (args[i].type == StateArg::Type::sat_sym_var)
             os << hexstring(subs[i].imm);
         else
@@ -183,7 +183,7 @@ string State::expandedname() const {
         if (i != args.size() - 1)
             os << ", ";
     }
-    for (int i = subs.size(); i != args.size(); ++i) {
+    for (unsigned int i = subs.size(); i != args.size(); ++i) {
         os << args[i];
         if (i != args.size() - 1)
             os << ", ";

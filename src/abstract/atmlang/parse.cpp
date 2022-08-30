@@ -152,7 +152,7 @@ void Parser::parse_statebody2(State &s) {
 }
 
 int Parser::find_state_arg(State &s, StateArg::Type t, bool error) {
-    for (int i = 0; i < s.args.size(); i++) {
+    for (unsigned int i = 0; i < s.args.size(); i++) {
         if (s.args[i].type == t && s.args[i].name == lx.gettok().substring()) {
             return i;
         }

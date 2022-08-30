@@ -5,7 +5,7 @@
 #include <memory>
 #include <set>
 
-#include "parse.hpp"
+#include "atmlang/parse.hpp"
 
 using std::cout; using std::endl;
 using std::ifstream; using std::stringstream;
@@ -27,9 +27,6 @@ int main(int argc, char *argv[]) {
     stringstream ss;
     ss << file.rdbuf();
     string input = ss.str();
-
-    cout << "file contents:\n";
-    cout << input << endl;
    
     Parser ps(input);
 }
