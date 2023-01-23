@@ -1,3 +1,5 @@
+grammar pdfs in README
+
 general
  - comments (doxygen?)
  - complete makefile

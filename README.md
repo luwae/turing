@@ -21,4 +21,6 @@ machines (planned):
  * calculate e to arbitrary precison
  * 8-bit stack machine
 
+[Grammar of concrete turing machines (.tm files)](grammar_concrete.pdf)
+
 **NOTE:** this project is currently being reworked in C (see the cturing/ directory)
