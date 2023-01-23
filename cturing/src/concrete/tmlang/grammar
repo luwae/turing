@@ -1,0 +1,17 @@
+S          -> id { Statebody } S2
+S2         -> eps | id { Statebody } S2
+Statebody  -> eps | [ Statebody2
+Statebody2 -> def ] Actions Nextstate | sym Symrange Symargs ] Actions Nextstate Statebody
+Symargs    -> eps | , sym Symrange Symargs
+Symrange   -> eps | - sym
+Actions    -> eps | > Actions | < Actions | = sym Actions
+Nextstate  -> eps | accept | reject | id
+
+S          -> {'id'}
+S1         -> {'eof'} | {'id'}
+Statebody  -> {'}'} | {'['}
+Statebody2 -> {'def'} | {'sym'}
+Symargs    -> {']'} | {','}
+Symrange   -> {']', ','} | {'-'}
+Actions    -> {'}', '[', 'accept', 'reject', 'id'} | {'>'} | {'<'} | {'='}
+NextState  -> {'}', '['} | {'accept'} | {'reject'} | {'id'}
