@@ -27,7 +27,6 @@ void Execution_step(Execution *e) {
     unsigned char sym = *Tape_at(&e->tape, e->pos);
     State *curr = state_vec_at(&e->m->states, e->state);
     Branch *b = NULL;
-    unsigned char *c = NULL;
     for (size_t i = 0; (b = branch_vec_at(&curr->branches, i)); i++) {
         if (b->symset_invert && !uchar_vec_find(&b->syms, sym)) {
             break;
