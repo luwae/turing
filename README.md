@@ -1,20 +1,24 @@
 # turing
 Tools to Design and Run Turing Machines
 
-The tools and machines in this repository have no practical relevance, they are merely created for fun and to use them in other projects. The design uses a variant of **Skeleton Tables** from Turing's original 1936 paper, which can be expanded trivially to form concrete turing machines. For more information on the design, check the **DESIGN** files.
+The tools and machines in this repository have no practical relevance, they are merely created for fun and to use them in other projects. The design uses a variant of **Skeleton Tables** from Turing's original 1936 paper, which can be expanded trivially to form concrete turing machines. For more information on the design, check the **DESIGN** files in the machines/ directory.
 
-features:
+features (complete):
  * abstract turing machines
     + language grammar
     + source-to-source compiler
-    + interpreter (planned)
  * concrete turing machines
     + language grammar
     + interpreter
-    + compiled file format (planned)
-    + compiler (planned)
-    + runtime (planned)
 
-machines:
+features (planned):
+ * compressed turing machine file format
+
+machines (complete):
  * calculate pi to arbitrary precision
- * calculate e to arbitrary precision (planned)
+
+machines (planned):
+ * calculate e to arbitrary precison
+ * 8-bit stack machine
+
+**NOTE:** this project is currently being reworked in C (see the cturing/ directory)

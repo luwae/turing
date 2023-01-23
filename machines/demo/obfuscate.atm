@@ -1,3 +1,5 @@
+# machine that replaces all letters with 'X'
+
 main {
   ['_'] accept
   [def] obfuscate('X', r(main))
