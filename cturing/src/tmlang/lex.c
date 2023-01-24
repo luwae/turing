@@ -14,33 +14,6 @@ static struct { char *key; int type; } keywords[] = {
     {"def", T_DEF}, {"accept", T_ACCEPT}, {"reject", T_REJECT}
 };
 
-static int handle_sym(Lexer *lx) {
-    char c1 = peek(lx);
-    if (c1 == 'x') {
-        char c2 = peek(lx);
-        if (IS_HEX(c2)) {
-            char c3 = peek(lx);
-            if (IS_HEX(c3)) {
-                char c4 = peek(lx);
-                if (c4 == '\'') {
-                    commit(lx);
-                    lx->tok.type = T_SYM;
-                    return T_SYM;
-                }
-            }
-        }
-    } else if (RANGE(c1, ' ', '~')) {
-        char c2 = peek(lx);
-        if (c2 == '\'') {
-            commit(lx);
-            lx->tok.type = T_SYM;
-            return T_SYM;
-        }
-    }
-    revert(lx);
-    return T_ERROR;
-}
-
 static int handle_string_ident(Lexer *lx) {
     char c;
     do {
@@ -51,18 +24,8 @@ static int handle_string_ident(Lexer *lx) {
             return T_IDENT;
         }
     } while (RANGE(c, ' ', '~'));
-    revert(lx);
-    return T_ERROR;
-}
-
-static int handle_ident(Lexer *lx) {
-    char c;
-    do {
-        c = peek(lx);
-    } while (IS_IDENT2(c));
     commit_last(lx);
-    lx->tok.type = T_IDENT;
-    return T_IDENT;
+    return T_ERROR;
 }
 
 int lex(Lexer *lx) {
@@ -70,12 +33,10 @@ int lex(Lexer *lx) {
         return T_EOF;
 
     remove_junk(lx);
-
     newtoken(lx);
-    char c = getch(lx);
     
+    char c = peek(lx);
     if (c == '\0') {
-        ungetch(lx);
         lx->done = 1;
         lx->tok.type = T_EOF;
         return T_EOF;
@@ -84,6 +45,7 @@ int lex(Lexer *lx) {
     for (size_t i = 0; i < sizeof(single_chars)/sizeof(single_chars[0]); i++) {
         if (single_chars[i].c == c) {
             lx->tok.type = single_chars[i].type;
+            commit(lx);
             return single_chars[i].type;
         }
     }
@@ -94,17 +56,16 @@ int lex(Lexer *lx) {
         return handle_string_ident(lx);
     
     if (IS_IDENT1(c)) {
-        ungetch(lx);
+        revert(lx);
         for (size_t i = 0; i < sizeof(keywords)/sizeof(keywords[0]); i++) {
             if (test_keyword(lx, keywords[i].key)) {
                 lx->tok.type = keywords[i].type;
                 return keywords[i].type;
             }
         }
-        getch(lx);
         return handle_ident(lx);
     }
     
-    ungetch(lx);
+    commit(lx);
     return T_ERROR;
 }

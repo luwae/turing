@@ -1,8 +1,6 @@
 #ifndef TOKENTYPES_H
 #define TOKENTYPES_H
 
-#define T_SYM 2
-#define T_IDENT 3
 #define T_MOVEL 4
 #define T_MOVER 5
 #define T_PRINT 6

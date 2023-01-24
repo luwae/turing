@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "lex_helper.h"
 
 void Token_error(const Token *tok, const char *msg) {
@@ -18,7 +19,8 @@ void Token_error(const Token *tok, const char *msg) {
 }
 
 void Lexer_init(Lexer *lx, const char *s) {	
-    lx->comm = lx->prev = lx->curr = (struct position) {.off = 0, .lineno = 1, .lineoff = 0};
+    lx->comm = lx->curr = (struct position) {.off = 0, .lineno = 1, .lineoff = 0};
+    lx->neof = 0;
     lx->s = s;
     lx->done = 0;
     newtoken(lx);

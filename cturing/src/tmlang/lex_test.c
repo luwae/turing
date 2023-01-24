@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "lex.h"
+#include "util/lex.h"
 
 #define BUFSIZE 1024 * 1024
 char s[BUFSIZE];
@@ -21,9 +21,9 @@ static const char *Token_name(int type) {
 
 static void Token_repr(const Token *tok) {
     if (tok->type == T_EOF)
-        printf("Token(eof, line=%lu)\n", tok->lineno);
+        printf("Token(eof, line=%lu)\n", tok->pos.lineno);
     else
-        printf("Token(%s, %.*s, line=%lu)\n", Token_name(tok->type), (int) tok->len, tok->s + tok->off, tok->lineno);
+        printf("Token(%s, \"%.*s\", line=%lu)\n", Token_name(tok->type), (int) tok->len, tok->s + tok->pos.off, tok->pos.lineno);
 }
 
 int main(int argc, char *argv[]) {
@@ -54,5 +54,6 @@ int main(int argc, char *argv[]) {
     do {
         status = lex(&lx);
         Token_repr(&lx.tok);
+        Token_error(&lx.tok, "test message");
     } while (status != T_EOF && status != T_ERROR);
 }

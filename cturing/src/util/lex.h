@@ -1,24 +1,19 @@
-#ifndef LEX_UTIL_H
-#define LEX_UTIL_H
+#ifndef LEX_H
+#define LEX_H
 
-#define RANGE(c, l, h) ((c) >= (l) && (c) <= (h))
-#define IS_IDENT1(c) (RANGE(c, 'A', 'Z') || RANGE(c, 'a', 'z') || (c) == '_')
-#define IS_IDENT2(c) (IS_IDENT1(c) || RANGE(c, '0', '9'))
-#define IS_HEX(c) (RANGE(c, '0', '9') || RANGE(c, 'a', 'f') || RANGE(c, 'A', 'F'))
+#include <stddef.h>
 
 // fixed values; rest is user-defined
 #define T_EOF 0
 #define T_ERROR 1
+#define T_SYM 2
+#define T_IDENT 3
 
-typedef struct token Token;
-typedef struct lexer Lexer;
-
-struct positon {
-    size_t off;
-    size_t lineno;
-    size_t lineoff;
+struct position {
+    size_t off, lineno, lineoff;
 };
 
+typedef struct token Token;
 struct token {
     int type;
     const char *s;
@@ -26,10 +21,12 @@ struct token {
     struct position pos;
 };
 
+typedef struct lexer Lexer;
 struct lexer {
     Token tok;
     
     struct position curr, comm;
+    size_t neof;
     
     const char *s;
     int done;
