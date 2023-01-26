@@ -1,6 +1,8 @@
 #include <stdio.h>
-#include "util/lex_helper.h"
-#include "tokentypes.h"
+#include "util/lex/lex.h"
+#include "util/lex/helper.h"
+#include "util/lex/turing_helper.h"
+#include "tmlang/tokentypes.h"
 
 static struct { char c; int type; } single_chars[] = {
     {'<', T_MOVEL}, {'>', T_MOVER},

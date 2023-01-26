@@ -1,6 +1,7 @@
 #ifndef TOKENTYPES_H
 #define TOKENTYPES_H
 
+#include "util/lex/turing_tokentypes.h"
 #define T_MOVEL 4
 #define T_MOVER 5
 #define T_PRINT 6

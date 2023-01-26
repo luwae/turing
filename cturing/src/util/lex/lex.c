@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include "lex_helper.h"
+#include "util/lex/lex.h"
+#include "util/lex/helper.h"
 
 void Token_error(const Token *tok, const char *msg) {
     if (tok->type == T_EOF) {

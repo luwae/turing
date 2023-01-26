@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "util/lex.h"
+#include "util/lex/lex.h"
 
 #define BUFSIZE 1024 * 1024
 char s[BUFSIZE];
