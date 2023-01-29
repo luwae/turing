@@ -1,14 +1,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct P(vec) {
-    size_t size;
-    size_t cap;
-    T *data;
-};
+// define T (vector type) before including this header
+// define P (name prefix) before including this header
+// define VEC_IMPL for implementation, or undefined for header only
+
+typedef struct P(vec) P(vec);
 
 void P(vec_init)(struct P(vec) *v);
-void P(vec_destroy)(struct P(vec) *v, void (*elem_destroy)(T *));
+void P(vec_destroy)(struct P(vec) *v, void (*elem_clean)(T *));
+struct P(vec) *P(vec_new)();
+void P(vec_free)(struct P(vec) *v, void (*elem_clean)(T *));
 size_t P(vec_size)(struct P(vec) *v);
 T *P(vec_pushresv)(struct P(vec) *v);
 int P(vec_push)(struct P(vec) *v, T *data);
@@ -16,16 +18,22 @@ T *P(vec_at)(struct P(vec) *v, size_t index);
 T *P(vec_atresv)(struct P(vec) *v, size_t index, T *pad);
 
 #if defined(VEC_IMPL)
+struct P(vec) {
+    size_t size;
+    size_t cap;
+    T *data;
+};
+
 void P(vec_init)(struct P(vec) *v) {
     v->size = v->cap = 0;
     v->data = NULL;
 }
 
-void P(vec_destroy)(struct P(vec) *v, void (*elem_destroy)(T *)) {
+void P(vec_destroy)(struct P(vec) *v, void (*elem_clean)(T *)) {
     if (v->data) {
-        if (elem_destroy)
+        if (elem_clean)
             for (size_t i = 0; i < v->size; i++)
-                elem_destroy(&v->data[i]);
+                elem_clean(&v->data[i]);
         free(v->data);
     }
 }
@@ -37,8 +45,8 @@ struct P(vec) *P(vec_new)() {
     return v;
 }
 
-void P(vec_free)(struct P(vec) *v, void (*elem_free)(T *)) {
-    P(vec_destroy)(v, elem_free);
+void P(vec_free)(struct P(vec) *v, void (*elem_clean)(T *)) {
+    P(vec_destroy)(v, elem_clean);
     free(v);
 }
 
