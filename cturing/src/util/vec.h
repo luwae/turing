@@ -6,6 +6,11 @@
 // define VEC_IMPL for implementation, or undefined for header only
 
 typedef struct P(vec) P(vec);
+struct P(vec) {
+    size_t size;
+    size_t cap;
+    T *data;
+};
 
 void P(vec_init)(struct P(vec) *v);
 void P(vec_destroy)(struct P(vec) *v, void (*elem_clean)(T *));
@@ -18,12 +23,6 @@ T *P(vec_at)(struct P(vec) *v, size_t index);
 T *P(vec_atresv)(struct P(vec) *v, size_t index, T *pad);
 
 #if defined(VEC_IMPL)
-struct P(vec) {
-    size_t size;
-    size_t cap;
-    T *data;
-};
-
 void P(vec_init)(struct P(vec) *v) {
     v->size = v->cap = 0;
     v->data = NULL;

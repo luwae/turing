@@ -25,4 +25,7 @@ void Lexer_init(Lexer *lx, const char *s) {
     lx->s = s;
     lx->done = 0;
     newtoken(lx);
+
+    // produce first token
+    lex(lx);
 }
