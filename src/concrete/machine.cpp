@@ -72,7 +72,7 @@ ostream &Branch::out(ostream &os, const Machine &m) const {
         os << "[";
         set<unsigned char>::size_type i = 0;
         for (const auto &s: syms) {
-            os << s;
+            os << "'x" << HEXDIGIT((s >> 4) & 0x0f) << HEXDIGIT(s & 0x0f) << "'";
             if (++i != syms.size())
                 os << ", ";
         }

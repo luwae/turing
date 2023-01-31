@@ -1,58 +1,62 @@
 #include <iostream>
 
-#include "machine.hpp"
+#include "concrete/machine.hpp"
 
 using std::cout; using std::endl;
 
 /*
 main {
   ['_'] < add
-  > main
+  [def] >
 }
 
 add {
-  ['0', '_'] ='1' ACCEPT
-  ='0' < add
+  ['1'] ='0' <
+  [def] ='1' accept
 }
  */
 
-int main() {
-    TuringMachine tm;
+int main(int argc, char *argv[]) {
+    Machine m;
     State main;
     State add;
     Branch b1, b2, b3, b4;
 
     main.name = "main";
     b1.syms.insert('_');
-    b1.action.primitives.emplace_back(PrimitiveType::pt_movel);
-    b1.action.term = TerminateType::term_cont;
-    b1.action.next = 1;
+    b1.primitives.emplace_back(PrimitiveType::movel);
+    b1.term = TerminateType::cont;
+    b1.next = 1;
     main.branches.push_back(b1);
-    b2.symset_invert = true;
-    b2.action.primitives.emplace_back(PrimitiveType::pt_mover);
-    b2.action.term = TerminateType::term_cont;
-    b2.action.next = 0;
+    b2.def = true;
+    b2.primitives.emplace_back(PrimitiveType::mover);
+    b2.term = TerminateType::cont;
+    b2.next = 0;
     main.branches.push_back(b2);
-    tm.add_state(main);
+    m.add_state(main);
 
     add.name = "add";
     b3.syms.insert('1');
-    b3.action.primitives.emplace_back(PrimitiveType::pt_print, '0');
-    b3.action.primitives.emplace_back(PrimitiveType::pt_movel);
-    b3.action.term = TerminateType::term_cont;
-    b3.action.next = 1;
+    b3.primitives.emplace_back(PrimitiveType::print, '0');
+    b3.primitives.emplace_back(PrimitiveType::movel);
+    b3.term = TerminateType::cont;
+    b3.next = 1;
     add.branches.push_back(b3);
-    b4.symset_invert = true;
-    b4.action.primitives.emplace_back(PrimitiveType::pt_print, '1');
-    b4.action.term = TerminateType::term_acc;
+    b4.def = true;
+    b4.primitives.emplace_back(PrimitiveType::print, '1');
+    b4.term = TerminateType::accept;
     add.branches.push_back(b4);
-    tm.add_state(add);
+    m.add_state(add);
 
-    cout << tm << endl;
+    cout << m << endl;
     
-    MachineExecution me(&tm, "1011");
-    while (me.get_term() == TerminateType::term_cont) {
-        me.step();
-        cout << me << endl;
+    if (argc < 2) {
+        cout << "enter initial tape state to see machine execution" << endl;
+        return 0;
+    }
+    Execution ex(&m, argv[1]);
+    while (ex.term() == TerminateType::cont) {
+        ex.step();
+        cout << ex << endl;
     }
 }
