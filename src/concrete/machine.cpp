@@ -1,153 +1,148 @@
 #include <iostream>
 
-#include "machine.hpp"
+#include "concrete/machine.hpp"
 
 using std::ostream;
 using std::cout; using std::endl;
 using std::string;
+using std::set;
 
-void MachineExecution::step() {
-    if (term != TerminateType::term_cont)
+void Execution::step() {
+    if (_term != TerminateType::cont)
         return;
 
-    unsigned char sym = tape[pos];
-    const State &curr = tm->get_state(state);
+    unsigned char sym = tape[_pos];
+    const State &curr_state = m->get_state(state_idx);
 
-    const Action *a = nullptr;
-    for (const auto &b : curr.branches) {
-        if (b.symset_invert && b.syms.find(sym) == b.syms.end()) {
-            a = &(b.action);
-            break;
-        }
-        if (!b.symset_invert && b.syms.find(sym) != b.syms.end()) {
-            a = &(b.action);
+    const Branch *curr_branch = nullptr;
+    for (const auto &b : curr_state.branches) {
+        if (b.def || b.syms.find(sym) != b.syms.end()) {
+            curr_branch = &b;
             break;
         }
     }
 
-    if (a == nullptr) { // no possible action
-        term = TerminateType::term_fail;
+    if (curr_branch == nullptr) { // no possible action
+        _term = TerminateType::fail;
         return;
     }
 
-    for (const auto &p : a->primitives) {
+    for (const auto &p : curr_branch->primitives) {
         switch (p.type) {
-        case PrimitiveType::pt_movel:
-            --pos;
+        case PrimitiveType::movel:
+            --_pos;
             break;
-        case PrimitiveType::pt_mover:
-            ++pos;
+        case PrimitiveType::mover:
+            ++_pos;
             break;
-        case PrimitiveType::pt_print:
-            tape[pos] = p.sym;
+        case PrimitiveType::print:
+            tape[_pos] = p.sym;
             break;
         }
     }
-    tape[pos]; // update tape to fit
+    tape[_pos]; // update tape to fit
     
-    term = a->term;
-    if (term == TerminateType::term_cont) {
-        state = a->next;
+    _term = curr_branch->term;
+    if (_term == TerminateType::cont) {
+        state_idx = curr_branch->next;
     }
 }
 
-std::ostream &operator<<(std::ostream &os, const TuringMachine &tm) {
-    for (const auto &s : tm.states)
-        os << s << "\n";
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const MachineExecution &me) {
-    int offset_zero = me.tape.lsize();
-    int offset = me.pos + me.tape.lsize();
-    for (int i = 0; i != offset; ++i)
-        os << " ";
-    os << me.tm->get_state(me.state).name << "\n";
-
-    if (offset_zero == offset) {
-        for (int i = 0; i != offset; ++i)
-            os << " ";
-        os << "V\n";
-    } else if (offset_zero < offset) {
-        for (int i = 0; i != offset_zero; ++i)
-            os << " ";
-        os << "|";
-        for (int i = offset_zero + 1; i != offset; ++i)
-            os << " ";
-        os << "V\n";
-    } else {
-        for (int i = 0; i != offset; ++i)
-            os << " ";
-        os << "V";
-        for (int i = offset + 1; i != offset_zero; ++i)
-            os << " ";
-        os << "|\n";
-    }
-    os << me.tape << "\n";
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const Primitive &p) {
+#define HEXDIGIT(n) (char)((n) < 10 ? (n) + '0' : (n) - 10 + 'a')
+        
+ostream &operator<<(ostream &os, const Primitive &p) {
     switch(p.type) {
-    case PrimitiveType::pt_movel:
+    case PrimitiveType::movel:
         os << "<";
         break;
-    case PrimitiveType::pt_mover:
+    case PrimitiveType::mover:
         os << ">";
         break;
-    case PrimitiveType::pt_print:
-        os << "='" << p.sym << "'";
+    case PrimitiveType::print:
+        os << "='x" << HEXDIGIT((p.sym >> 4) & 0x0f) << HEXDIGIT(p.sym & 0x0f) << "'";
         break;
     }
     return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const Action &a) {
-    os << "Action(";
-    for (const auto &p : a.primitives)
-        os << p;
-    os << ", ";
-    switch (a.term) {
-    case term_cont:
-        os << a.next;
+ostream &Branch::out(ostream &os, const Machine &m) const {
+    if (def) {
+        os << "[def] ";
+    } else {
+        os << "[";
+        set<unsigned char>::size_type i = 0;
+        for (const auto &s: syms) {
+            os << s;
+            if (++i != syms.size())
+                os << ", ";
+        }
+        os << "] ";
+    }
+    for (const auto &p : primitives) {
+        os << p << " ";
+    }
+    switch (term) {
+    case TerminateType::cont:
+        os << m.get_state(next).name;
         break;
-    case term_acc:
-        os << "<accept>";
+    case TerminateType::accept:
+        os << "accept";
         break;
-    case term_rej:
-        os << "<reject>";
+    case TerminateType::reject:
+        os << "reject";
         break;
-    case term_fail:
-        os << "<fail>";
+    // fail should be impossible here
+    case TerminateType::fail:
+        os << "fail";
         break;
     }
-    os << ")";
     return os;
 }
 
-template <typename T>
-void output_csl(std::ostream &os, const T &container) {
-    typename T::size_type i = 0;
-    for (const auto &elem : container) {
-        os << elem;
-        if (++i != container.size())
-            os << ", ";
+ostream &State::out(ostream &os, const Machine &m) const {
+    os << name << " {" << endl;
+    for (const auto &b : branches) {
+        os << "    ";
+        b.out(os, m) << endl;
     }
-}
-
-std::ostream &operator<<(std::ostream &os, const Branch &b) {
-    if (b.symset_invert) {
-        os << "!";
-    }
-    os << "[";
-    output_csl(os, b.syms);
-    os << "]: " << b.action;
+    os << "}";
     return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const State &s) {
-    os << "State::" << s.name << "(";
-    output_csl(os, s.branches);
-    os << ")";
+ostream &operator<<(ostream &os, const Machine &m) {
+    for (const auto &s : m.states)
+        s.out(os, m) << endl;
     return os;
 }
+
+ostream &operator<<(ostream &os, const Execution &ex) {
+    Tape::size_type offset_zero = ex.tape.lsize();
+    Tape::size_type offset = ex._pos + ex.tape.lsize();
+    Tape::size_type i;
+    for (i = 0; i != offset; ++i)
+        os << " ";
+    os << ex.m->get_state(ex.state_idx).name << endl;
+
+    if (offset_zero == offset) {
+        for (i = 0; i != offset; ++i)
+            os << " ";
+        os << "V" << endl;
+    } else if (offset_zero < offset) {
+        for (i = 0; i != offset_zero; ++i)
+            os << " ";
+        os << "|";
+        for (i = offset_zero + 1; i != offset; ++i)
+            os << " ";
+        os << "V" << endl;
+    } else {
+        for (i = 0; i != offset; ++i)
+            os << " ";
+        os << "V";
+        for (i = offset + 1; i != offset_zero; ++i)
+            os << " ";
+        os << "|" << endl;
+    }
+    os << ex.tape << endl;
+    return os;
+}
+

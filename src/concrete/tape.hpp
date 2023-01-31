@@ -1,5 +1,5 @@
-#ifndef TAPE_HPP
-#define TAPE_HPP
+#ifndef CONCRETE_TAPE_HPP
+#define CONCRETE_TAPE_HPP
 
 #include <iostream>
 #include <string>
@@ -7,14 +7,13 @@
 
 class Tape {
 public:
-    using size_type = std::vector<unsigned char>::size_type;
+    using size_type = int;
     Tape() = default;
     Tape(const std::string &input): right(input.begin(), input.end()) { }
-    Tape(const std::vector<unsigned char> &v): right(v.begin(), v.end()) { }
-    unsigned char &operator[](int index);
-    size_type size() const { return right.size() + left.size(); }
-    size_type rsize() const { return right.size(); }
     size_type lsize() const { return left.size(); }
+    size_type rsize() const { return right.size(); }
+    size_type size() const { return left.size() + right.size(); }
+    unsigned char &operator[](size_type index);
     friend std::ostream &operator<<(std::ostream &os, const Tape &tape);
 private:
     std::vector<unsigned char> right;

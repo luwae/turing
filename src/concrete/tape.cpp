@@ -1,18 +1,17 @@
-#include "tape.hpp"
+#include "concrete/tape.hpp"
 
 using std::ostream;
 using std::vector;
 
-unsigned char &Tape::operator[](int index) {
-    if (index >= 0) {
-        if ((size_type) index >= right.size())
-            right.insert(right.end(), index - (int) right.size() + 1, '_');
-        return right[index];
+unsigned char &Tape::operator[](size_type index) {
+    vector<unsigned char> *v = &right;
+    if (index < 0) {
+        index = ~index;
+        v = &left;
     }
-    index = -index - 1;
-    if ((size_type) index >= left.size())
-        left.insert(left.end(), index - (int) left.size() + 1, '_');
-    return left[index];
+    if (index >= (size_type) v->size())
+        v->insert(v->end(), index - (size_type) v->size() + 1, '_');
+    return (*v)[index];
 }
 
 ostream &operator<<(ostream &os, const Tape &tape) {

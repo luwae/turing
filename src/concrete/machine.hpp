@@ -1,5 +1,5 @@
-#ifndef MACHINE_HPP
-#define MACHINE_HPP
+#ifndef CONCRETE_MACHINE_HPP
+#define CONCRETE_MACHINE_HPP
 
 #include <iostream>
 #include <map>
@@ -7,78 +7,74 @@
 #include <string>
 #include <vector>
 
-#include "tape.hpp"
+#include "concrete/tape.hpp"
 
 enum PrimitiveType {
-    pt_movel = 0,
-    pt_mover = 1,
-    pt_print = 2
+    movel = 0,
+    mover = 1,
+    print = 2
 };
 
 class Primitive {
 public:
     Primitive(PrimitiveType t, unsigned char sym = '\0'): type(t), sym(sym) { }
+    friend std::ostream &operator<<(std::ostream &os, const Primitive &p);
     PrimitiveType type;
     unsigned char sym;
 };
 
 enum TerminateType {
-    term_cont = 0,
-    term_acc = 1,
-    term_rej = 2,
-    term_fail = 3,
+    cont = 0,
+    accept = 1,
+    reject = 2,
+    fail = 3,
 };
 
-class Action {
-public:
-    std::vector<Primitive> primitives;
-    TerminateType term;
-    unsigned int next;
-};
+class State;
+class Machine;
 
 class Branch {
 public:
-    bool symset_invert = false;
+    std::ostream &out(std::ostream &os, const Machine &m) const;
+    bool def = false;
     std::set<unsigned char> syms;
-    Action action;
+    std::vector<Primitive> primitives;
+    TerminateType term;
+    std::vector<State>::size_type next;
 };
 
 class State {
 public:
+    std::ostream &out(std::ostream &os, const Machine &m) const;
     std::string name;
     std::vector<Branch> branches;
 };
 
-class TuringMachine {
+class Machine {
 public:
-    friend std::ostream &operator<<(std::ostream &os, const TuringMachine &tm);
     void add_state(State &s) { states.push_back(s); }
-    const State &get_state(unsigned int index) const { return states[index]; }
-    unsigned int size() const { return states.size(); }
+    State &add_state_inplace() { states.emplace_back(); return states.back(); }
+    const State &get_state(std::vector<State>::size_type index) const { return states[index]; }
+    std::vector<State>::size_type size() const { return states.size(); }
+    friend std::ostream &operator<<(std::ostream &os, const Machine &m);
 private:
     std::vector<State> states;
 };
 
-class MachineExecution {
+class Execution {
 public:
-    MachineExecution(const TuringMachine *tm): tm(tm), tape() { }
-    MachineExecution(const TuringMachine *tm, const std::string &input): tm(tm), tape(input) { }
-    MachineExecution(const TuringMachine *tm, const std::vector<unsigned char> &v): tm(tm), tape(v) { }
+    Execution(const Machine *m): m(m), tape() { }
+    Execution(const Machine *m, const std::string &input): m(m), tape(input) { }
     void step();
-    Tape::size_type get_pos() const { return pos; }
-    TerminateType get_term() const { return term; }
-    friend std::ostream &operator<<(std::ostream &os, const MachineExecution &me);
+    Tape::size_type pos() const { return _pos; }
+    TerminateType term() const { return _term; }
+    friend std::ostream &operator<<(std::ostream &os, const Execution &ex);
 private:
-    const TuringMachine *tm;
+    const Machine *m;
     Tape tape;
-    Tape::size_type pos = 0;
-    TerminateType term = TerminateType::term_cont;
-    unsigned int state = 0;
+    Tape::size_type _pos = 0;
+    TerminateType _term = TerminateType::cont;
+    std::vector<State>::size_type state_idx = 0;
 };
-
-std::ostream &operator<<(std::ostream &os, const Primitive &p);
-std::ostream &operator<<(std::ostream &os, const Action &a);
-std::ostream &operator<<(std::ostream &os, const Branch &b);
-std::ostream &operator<<(std::ostream &os, const State &s);
 
 #endif
