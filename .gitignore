@@ -2,5 +2,6 @@ __pycache__
 *.swp
 *.o
 *_test
-experimental
-tmrun
+/experimental
+/tmrun
+/rusturing/target
