@@ -15,6 +15,12 @@ fn is_ident(c: u8) -> bool {
         || (c >= b'0' && c <= b'9')
 }
 
+fn is_hex(c: u8) -> bool {
+    (c >= b'0' && c <= b'9')
+        || (c >= b'a' && c <= b'f')
+        || (c >= b'A' && c <= b'F')
+}
+
 #[derive(Debug, Copy, Clone)]
 struct Position {
     off: usize,
@@ -220,6 +226,36 @@ impl Lexer {
         self.commit_last(TokenType::Ident);
     }
 
+    fn handle_string_ident(&mut self) {
+        loop {
+            let c = self.peek();
+            if c == b'\"' {
+                self.commit(TokenType::Ident);
+                return;
+            } else if !(b' ' ..= b'~').contains(&c) {
+                self.commit_last(TokenType::Error);
+                return;
+            }
+        }
+    }
+
+    fn handle_sym(&mut self) {
+        let c1 = self.peek();
+        if (b' ' ..= b'~').contains(&c1) {
+            let c2 = self.peek();
+            if c2 == b'\''
+                    || (c1 == b'x'
+                        && is_hex(c2)
+                        && is_hex(self.peek())
+                        && self.peek() == b'\'') {
+                self.commit(TokenType::Sym);
+                return;
+            }
+        }
+        // fallthrough if anything is wrong
+        self.commit_last(TokenType::Error);
+    }
+
     fn lex_nocheck(&mut self) -> TokenType {
         self.remove_junk();
         self.tok.clear_at(&self.curr);
@@ -240,13 +276,17 @@ impl Lexer {
         };
         if let Some(toktype) = single_char {
             self.commit(toktype);
-        } else if is_ident_start(c) {
+        } else if c == b'\"' {
+            self.handle_string_ident();
+        } else if c == b'\'' {
+            self.handle_sym();
+        }else if is_ident_start(c) {
             self.back();
             // TODO probably inefficient
             let keywords: Vec<(&'static str, TokenType)> = vec![
                 ("accept", TokenType::Accept),
                 ("reject", TokenType::Reject),
-                ("default", TokenType::Deflt),
+                ("def", TokenType::Deflt),
             ];
             if let None = keywords.iter().find(|(kw, toktype)| self.handle_keyword(kw, *toktype)) {
                 self.handle_ident();
