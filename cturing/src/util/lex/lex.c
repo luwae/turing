@@ -8,7 +8,7 @@ void Token_error(const Token *tok, const char *msg) {
         return;
     }
     
-    fprintf(stderr, "%lu:%lu: %s\n | ", tok->pos.lineno, tok->pos.off - tok->pos.lineoff + 1, msg);
+    fprintf(stderr, "%zu:%zu: %s\n | ", tok->pos.lineno, tok->pos.off - tok->pos.lineoff + 1, msg);
     for (size_t index = tok->pos.lineoff; tok->s[index] != '\n' && tok->s[index] != '\0'; index++)
         fputc(tok->s[index], stderr);
     fprintf(stderr, "\n | ");

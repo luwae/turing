@@ -1,14 +1,14 @@
-#ifndef LEX_HPP
-#define LEX_HPP
+#ifndef TMLANG_LEX_HPP
+#define TMLANG_LEX_HPP
 
+#include <iostream>
 #include <string>
-
-namespace lex {
+#include <memory>
 
 enum TokenType {
     eof = 0,
     error = 1,
-    chr = 2,
+    sym = 2,
     ident = 3,
 
     movel = 4,
@@ -27,60 +27,59 @@ enum TokenType {
     range = 15,
 };
 
+struct position {
+    size_t off = 0, lineno = 0, lineoff = 0;
+    void clear() { off = lineno = lineoff = 0; }
+};
+
 class Lexer;
 
 class Token {
     friend class Lexer;
 public:
-    using size_type = std::string::size_type;
-
-    Token()=default;
     Token (const Token &that)=default;
     Token &operator=(const Token &that)=default;
 
     static std::string name(TokenType t);
+    friend std::ostream &operator<<(std::ostream &os, const Token &t);
+    
     std::string substring() const;
-    std::string repr() const;
     std::ostream &perror(std::ostream &os, const std::string &msg) const;
-    TokenType gettype() const { return type; }
+    TokenType type() const { return _type; }
+    void decrease_range(size_t front, size_t back);
 private:
-    TokenType type;
-    size_type len;
-    size_type offset;
-    int line;
-    size_type lineoff;
-    const Lexer *lx;
-
-    // only allow creation of tokens by lexer
-    Token(TokenType type, size_type len, size_type offset, int line, size_type lineoff, const Lexer *lx):
-        type(type), len(len), offset(offset), line(line), lineoff(lineoff), lx(lx) { }
+    Token() = default;
+    Token(std::shared_ptr<const std::string> s): _s(s) { clear(); }
+    void clear() { _type = TokenType::error; _pos.clear(); _len = 0; }
+    
+    TokenType _type;
+    struct position _pos;
+    size_t _len;
+    std::shared_ptr<const std::string> _s;
 };
 
 class Lexer {
-    friend class Token;
 public:
-    using size_type = std::string::size_type;
-    Lexer(const std::string &input): s(input)
-        { lex(); }
-    const Token &gettok() { return tok; }
-    void lex();
-    void reset();
+    Lexer(const std::string &s)
+        { _s = std::make_shared<const std::string>(s); _tok(_s); lex(); }
+    const Token &tok() const { return _tok; }
+    TokenType lex();
 private:
-    char getch();
-    void ungetch();
-    char newtoken();
-    void remove_whitespace();
-    struct {
-        char c = '\0';
-        size_type next = 0;
-        int line = 1;
-        size_type lineoff = 0;
-    } pos, pos_old;
-    const std::string s;
-    bool done = false;
-    Token tok;
+    char peek();
+    void back();
+    void commit() { _comm = _curr; _tok._len = _comm.off - _tok._pos.off; }
+    void commit_last() { back(); commit(); }
+    void revert() { _curr = _comm; }
+    
+    bool test_keyword(const std::string &keyword);
+    TokenType handle_sym();
+    TokenType handle_ident();
+    TokenType handle_string_ident();
+    void remove_junk();
+    
+    Token _tok;
+    struct position _curr, _comm;
+    std::shared_ptr<const std::string> _s;
 };
-
-}
 
 #endif // LEX_HPP

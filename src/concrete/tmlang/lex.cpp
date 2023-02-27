@@ -3,18 +3,16 @@
 #include <stdexcept>
 #include <map>
 
-#include "lex.hpp"
+#include "tmlang/lex.hpp"
 
 using std::ostream; using std::endl;
 using std::map;
 using std::string;
 using std::runtime_error;
 
-namespace lex {
-
 string Token::name(TokenType t) {
     static string names[] = {
-        "eof", "error", "chr", "ident",
+        "eof", "error", "sym", "ident",
         "movel", "mover", "print", "lcurly", "rcurly",
         "lbracket", "rbracket",
         "comma",
@@ -25,188 +23,216 @@ string Token::name(TokenType t) {
 }
 
 string Token::substring() const {
-    if (type == TokenType::eof)
-        return "";
-    return lx->s.substr(offset, len);
+    return _s->substr(_pos.off, _len);
 }
 
-string Token::repr() const {
-    return "Token(type=" + name(type)
-        + ", len=" + std::to_string(len)
-        + ", offset=" + std::to_string(offset)
-        + ", line=" + std::to_string(line)
-        + ", lineoff=" + std::to_string(lineoff)
-        + ", str=\"" + substring()  + "\")";
+std::ostream &operator<<(std::ostream &os, const Token &t) {
+    os << "Token(" << Token::name(t._type)
+       << ", \"" << t.substring() << "\""
+       << ", line=" << t._pos.lineno << ", lineoff=" << t._pos.lineoff
+       << ")" << endl;
+    return os;
 }
 
 ostream &Token::perror(ostream &os, const string &msg) const {
 
-    if (type == TokenType::eof) {
+    if (_type == TokenType::eof) {
         os << "eof: " << msg << endl;
         return os;
     }
 
-    os << line << ":" << (offset - lineoff + 1) << ": " << msg << endl;
+    os << _pos.lineno << ":" << (_pos.off - _pos.lineoff + 1) << ": " << msg << endl;
     os << " | ";
-    for (size_type index = lineoff; lx->s[index] != '\n' && lx->s[index] != '\0'; index++)
-        os << lx->s[index];
+    for (size_t index = _pos.lineoff; (*_s)[index] != '\n' && (*_s)[index] != '\0'; index++)
+        os << (*_s)[index];
     os << endl;
     os << " | ";
-    for (unsigned int i = 0; i < offset - lineoff; i++)
+    for (size_t i = 0; i < _pos.off - _pos.lineoff; i++)
         os << " ";
-    for (unsigned int i = 0; i < len; i++)
+    for (size_t i = 0; i < _len; i++)
         os << "~";
     os << endl;
 
     return os;
 }
 
-bool isident1(char c) {
-    return isalpha(c) || c == '_';
-}
+#define RANGE(c, l, h) ((c) >= (l) && (c) <= (h))
+#define IS_IDENT1(c) (RANGE(c, 'A', 'Z') || RANGE(c, 'a', 'z') || (c) == '_')
+#define IS_IDENT2(c) (IS_IDENT1(c) || RANGE(c, '0', '9'))
+#define IS_HEX(c) (RANGE(c, '0', '9') || RANGE(c, 'a', 'f') || RANGE(c, 'A', 'F'))
 
-bool isident2(char c) {
-    return isalpha(c) || c == '_' || (c >= '0' && c <= '9');
-}
-
-char Lexer::getch() {
-    tok.len++;
-
-    pos_old = pos;
-    if (pos.c == '\n') {
-        pos.line++;
-        pos.lineoff = pos.next;
+char Lexer::peek() {
+    if (_curr.off >= _s->size()) {
+        _curr.off++;
+        return '\0';
     }
-    pos.c = s[pos.next++];
-    return pos.c;
-}
-
-void Lexer::ungetch() {
-    tok.len--;
-
-    pos = pos_old;
-}
-
-void Lexer::reset() {
-    pos = pos_old = {'\0', 0, 1, 0};
-    done = false;
-    lex();
-}
-
-bool contains_keyword(const char *start, const string &keyword) {
-    for (unsigned int i = 0; i < keyword.size(); i++) {
-        if (start[i] != keyword[i])
-            return false;
+    char c = (*_s)[_curr.off];
+    if (c == '\n') {
+        _curr.lineno++;
+        _curr.lineoff = _curr.off + 1;
     }
-    return !isident2(start[keyword.size()]); // guard against identifiers
-}
-
-void Lexer::remove_whitespace() {
-    while (true) {
-        while (isspace(getch()))
-            ;
-        ungetch();
-        if (getch() == '#') {
-            char c;
-            do {
-                c = getch();
-            } while (c != '\n' && c != '\0');
-            ungetch();
-            if (c == '\0')
-                return;
-        } else {
-            ungetch();
-            return;
-        }
-    }
-}
-
-char Lexer::newtoken() {
-    char c = getch();
-    tok = Token(error, 1, pos.next - 1, pos.line, pos.lineoff, this);
+    _curr.off++;
     return c;
 }
 
-void Lexer::lex() {
-    if (done)
+void Lexer::back() {
+    // cannot move before commit
+    if (_curr.off == _comm.off)
         return;
 
-    remove_whitespace();
-
-    static map<char, TokenType> single_chars = {
-        {'<', movel}, {'>', mover},
-        {'{', lcurly}, {'}', rcurly},
-        {'[', lbracket}, {']', rbracket},
-        {'=', print}, {',', comma},
-        {'-', range}
-    };
-
-    static map<string, TokenType> keywords = {
-        {"def", def}, {"accept", accept}, {"reject", reject}
-    };
-
-    char c = newtoken();
-
-    auto single_found = single_chars.find(c);
-    if (c == '\0') {
-        done = true;
-        tok.type = eof;
+    if (--_curr.off >= _s->size())
         return;
-    } else if (single_found != single_chars.end()) {
-        tok.type = single_found->second;
+    char c = (*_s)[_curr.off];
+    if (c != '\n')
         return;
-    } else if (c == '\'') {
-        char c1 = getch();
-        if (c1 == 'x') {
-            char c2 = getch();
-            if (c2 == '\'') {
-                tok.type = chr;
-                return;
-            } else if (isxdigit(c2)) {
-                char c3 = getch();
-                if (isxdigit(c3)) {
-                    char c4 = getch();
-                    if (c4 == '\'') {
-                        tok.type = chr;
-                        return;
-                    }
-                }
-            }
-        } else if (c1 >= ' ' && c1 <= '~') {
-            char c2 = getch();
-            if (c2 == '\'') {
-                tok.type = chr;
-                return;
-            }
+    _curr.lineno--;
+    _curr.lineoff = _comm.lineoff; // conservative estimate
+    if (_curr.off == _comm.off)
+        return; // avoid overflow lx->curr.off == 0
+    for (size_t i = _curr.off - 1; i >= _comm.off; --i) {
+        if ((*_s)[i] == '\n') {
+            _curr.lineoff = i + 1;
+            break;
         }
-    } else if (isalpha(c) || c == '_') {
-        
-        for (auto it = keywords.begin(); it != keywords.end(); ++it) {
-            if (contains_keyword(&s[tok.offset], it->first)) {
-                for (unsigned int i = 1; i < it->first.size(); i++) // already getch() one
-                    getch();
-                tok.type = it->second;
-                return;
-            }
-        }
-
-        while (isident2(getch()))
-            ;
-        ungetch();
-        tok.type = ident;
-        return;
-    } else if (c == '"') {
-    	do {
-    	    c = getch();
-    	} while (c != '"' && c != '\n' && c != '\0');
-    	if (c == '"') { // valid identifier literal
-    	    tok.type = ident;
-    	    return;
-    	}
     }
-
-    // failed
-    done = true;
 }
 
+bool Lexer::test_keyword(const std::string &keyword) {
+    for (char c : keyword) {
+        if (peek() != c) {
+            revert();
+            return false;
+        }
+    }
+    char after = peek();
+    if (IS_IDENT2(after)) { // guard against identifiers
+        revert();
+        return false;
+    }
+    commit_last();
+    return true;
+}
+
+TokenType Lexer::handle_sym() {
+    char c1 = peek();
+    if (c1 == 'x') {
+        char c2 = peek();
+        if (IS_HEX(c2)) {
+            char c3 = peek();
+            if (IS_HEX(c3)) {
+                char c4 = peek();
+                if (c4 == '\'') {
+                    commit();
+                    _tok._type = TokenType::sym;
+                    return TokenType::sym;
+                }
+            }
+        }
+    } else if (RANGE(c1, ' ', '~')) {
+        char c2 = peek();
+        if (c2 == '\'') {
+            commit();
+            _tok._type = TokenType::sym;
+            return TokenType::sym;
+        }
+    }
+    commit_last();
+    return TokenType::error;
+}
+
+TokenType Lexer::handle_ident() {
+    char c;
+    do {
+        c = peek();
+    } while (IS_IDENT2(c));
+    commit_last();
+    _tok._type = TokenType::ident;
+    return TokenType::ident;
+}
+
+TokenType Lexer::handle_string_ident() {
+    char c;
+    do {
+        c = peek();
+        if (c == '\"') {
+            commit();
+            _tok._type = TokenType::ident;
+            return TokenType::ident;
+        }
+    } while (RANGE(c, ' ', '~'));
+    commit_last();
+    return TokenType::error;
+}
+
+// function left with '\0' or printable char except ' ' and '#'
+// technically creates a "whitespace token", but we have no use for it
+void Lexer::remove_junk() {
+    char c;
+    do {
+        c = peek();
+        if (c == '#') {
+            do {
+                c = peek();
+                if (c == '\0') {
+                    back();
+                    break;
+                }
+            } while (c != '\n');
+        } else if (c == '\0' || RANGE(c, '!', '~')) {
+            commit_last();
+            return;
+        }
+    } while (1);
+}
+
+map<char, TokenType> single_chars = {
+    {'<', TokenType::movel}, {'>', TokenType::mover},
+    {'{', TokenType::lcurly}, {'}', TokenType::rcurly},
+    {'[', TokenType::lbracket}, {']', TokenType::rbracket},
+    {'=', TokenType::print}, {',', TokenType::comma},
+    {'-', TokenType::range}
+};
+
+map<string, TokenType> keywords = {
+    {"def", TokenType::def}, {"accept", TokenType::accept}, {"reject", TokenType::reject}
+};
+
+TokenType Lexer::lex() {
+    if (_tok._type == TokenType::eof || _tok._type == TokenType::error)
+        return _tok._type;
+
+    remove_junk();
+    _tok.clear();
+    
+    char c = peek();
+    if (c == '\0') {
+        commit();
+        _tok._type = TokenType::eof;
+        return TokenType::eof;
+    }
+    
+    auto found = single_chars.find(c);
+    if (found != single_chars.end()) {
+        commit();
+        _tok._type = found->second;
+        return found->second;
+    }
+    if (c == '\'')
+        return handle_sym();
+    if (c == '\"')
+        return handle_string_ident();
+    
+    if (IS_IDENT1(c)) {
+        revert();
+        for (const auto &pair : keywords) {
+            if (test_keyword(pair.first)) {
+                _tok._type = pair.second;
+                return pair.second;
+            }
+        }
+        return handle_ident();
+    }
+    
+    commit();
+    return TokenType::error;
 }
