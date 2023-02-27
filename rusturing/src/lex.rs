@@ -1,6 +1,4 @@
 use std::cmp;
-use std::env;
-use std::fs;
 use std::fmt;
 use std::rc::Rc;
 
@@ -32,16 +30,10 @@ impl Position {
     fn new() -> Self {
         Position { off: 0, lineno: 1, lineoff: 0 }
     }
-
-    fn clear(&mut self) {
-        self.off = 0;
-        self.lineno = 1;
-        self.lineoff = 0;
-    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum TokenType {
+pub enum TokenType {
     Eof,
     Error,
     Ident,
@@ -60,7 +52,7 @@ enum TokenType {
     Deflt,
 }
 
-struct Token {
+pub struct Token {
     toktype: TokenType,
     pos: Position,
     len: usize,
@@ -77,19 +69,13 @@ impl Token {
         }
     }
 
-    fn clear(&mut self) {
-        self.toktype = TokenType::Error;
-        self.pos.clear();
-        self.len = 0;
-    }
-
     fn clear_at(&mut self, pos: &Position) {
         self.toktype = TokenType::Error;
         self.pos = *pos;
         self.len = 0;
     }
 
-    fn substring(&self) -> &str {
+    pub fn substring(&self) -> &str {
         // avoid slicing outside string range (for example for Eof token)
         let from = cmp::min(self.pos.off, (*self.s).len());
         let to = cmp::min(self.pos.off + self.len, (*self.s).len());
@@ -115,7 +101,7 @@ impl Clone for Token {
 }
 
 #[derive(Debug)]
-struct Lexer {
+pub struct Lexer {
     tok: Token,
     curr: Position,
     last_active: bool,
@@ -125,7 +111,7 @@ struct Lexer {
 }
 
 impl Lexer {
-    fn from(s : &str) -> Self {
+    pub fn from(s : &str) -> Self {
         let stringcopy = Rc::new(s.to_string());
         let mut lx = Lexer {
             tok: Token::from(&stringcopy),
@@ -297,45 +283,28 @@ impl Lexer {
         self.tok.toktype
     }
 
-    fn lex(&mut self) -> TokenType {
+    pub fn lex(&mut self) -> TokenType {
         if self.is_done() {
             return self.tok.toktype;
         }
         self.lex_nocheck()
     }
 
-    fn toktype(&self) -> TokenType {
+    pub fn toktype(&self) -> TokenType {
         self.tok.toktype
     }
 
-    fn is_done(&self) -> bool {
+    pub fn is_done(&self) -> bool {
         self.tok.toktype == TokenType::Eof || self.tok.toktype == TokenType::Error
     }
 
-    fn tok_clone(&self) -> Token {
+    pub fn tok_clone(&self) -> Token {
         self.tok.clone()
     }
     
-    fn tok_ref(&self) -> &Token {
+    pub fn tok_ref(&self) -> &Token {
         &self.tok
     }
 }
 
 // TODO use option instead of returning '\0'?
-
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
-        println!("usage: $ <program name> <file path>");
-        return;
-    }
-    let file_path = &args[1];
-    let s = fs::read_to_string(file_path).expect("error reading file");
-
-    let mut lx = Lexer::from(&s);
-    while !lx.is_done() {
-        println!("{:?}", lx.tok_ref());
-        lx.lex();
-    }
-    println!("{:?}", lx.tok_ref());
-}
