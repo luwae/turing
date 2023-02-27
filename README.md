@@ -25,4 +25,5 @@ machines (planned):
 
 [Grammar of abstract turing machines (.atm files)](grammar_abstract.pdf)
 
-**NOTE** This project started as (and still is) an exercise in C(++) programming as well as lexer/parser/compiler writing. This is why I implemented everything myself instead of using external tools like lex and bison.
+**NOTE** This project is an exercise in programming as well as lexer/parser/compiler writing. This is why I implemented everything myself instead of using external tools like lex and bison.
+**NOTE** This project is currently being rewritten in Rust. See rusturing/ directury.
