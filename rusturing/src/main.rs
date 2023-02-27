@@ -1,4 +1,5 @@
 use std::cmp;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fmt;
@@ -39,6 +40,9 @@ enum TokenType {
     Eof,
     Error,
     Ident,
+    Accept,
+    Reject,
+    Deflt,
 }
 
 struct Token {
@@ -161,22 +165,6 @@ impl Lexer {
         self.last_active = false;
     }
 
-    fn test_keyword(&mut self, keyword: &str) -> bool {
-        for &c in keyword.as_bytes() {
-            if self.peek() != c {
-                self.revert();
-                return false;
-            }
-        }
-        let after = self.peek();
-        if is_ident(after) {
-            self.revert();
-            return false;
-        }
-        self.commit_last(TokenType::Error);
-        true
-    }
-
     fn remove_comment(&mut self) {
         let mut c = self.peek();
         while c != b'\n' {
@@ -200,18 +188,54 @@ impl Lexer {
         }
     }
 
+    fn handle_keyword(&mut self, keyword: &str, toktype: TokenType) -> bool {
+        for &c in keyword.as_bytes() {
+            if self.peek() != c {
+                self.revert();
+                return false;
+            }
+        }
+        let after = self.peek();
+        if is_ident(after) {
+            self.revert();
+            return false;
+        }
+        self.commit_last(toktype);
+        true
+    }
+
+    fn handle_ident(&mut self) {
+        while is_ident(self.peek()) {
+            // loop
+        }
+        self.commit_last(TokenType::Ident);
+    }
+
     fn lex_nocheck(&mut self) -> TokenType {
         self.remove_junk();
         self.tok.clear_at(&self.curr);
 
-        let mut c = self.peek();
+        let c = self.peek();
         if c == b'\0' {
             self.commit(TokenType::Eof);
         } else if is_ident_start(c) {
-            while is_ident(c) {
-                c = self.peek();
+            self.back();
+            // TODO this is probably slow because the hashmap is not static
+            let keywords: HashMap<&'static str, TokenType> = HashMap::from([
+                ("accept", TokenType::Accept),
+                ("reject", TokenType::Reject),
+                ("default", TokenType::Deflt),
+            ]);
+            let mut found_kw = false;
+            for (kw, toktype) in keywords {
+                if self.handle_keyword(kw, toktype) {
+                    found_kw = true;
+                    break;
+                }
             }
-            self.commit_last(TokenType::Ident);
+            if !found_kw {
+                self.handle_ident()
+            }
         } else {
             self.commit(TokenType::Error);
         }
