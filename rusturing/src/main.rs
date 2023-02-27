@@ -1,5 +1,4 @@
 use std::cmp;
-use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fmt;
@@ -40,6 +39,16 @@ enum TokenType {
     Eof,
     Error,
     Ident,
+    Sym,
+    Movel,
+    Mover,
+    Lcurly,
+    Rcurly,
+    Lbracket,
+    Rbracket,
+    Print,
+    Comma,
+    Range,
     Accept,
     Reject,
     Deflt,
@@ -216,25 +225,31 @@ impl Lexer {
         self.tok.clear_at(&self.curr);
 
         let c = self.peek();
-        if c == b'\0' {
-            self.commit(TokenType::Eof);
+        let single_char = match c {
+            b'\0' => Some(TokenType::Eof),
+            b'<'  => Some(TokenType::Movel),
+            b'>'  => Some(TokenType::Mover),
+            b'{'  => Some(TokenType::Lcurly),
+            b'}'  => Some(TokenType::Rcurly),
+            b'['  => Some(TokenType::Lbracket),
+            b']'  => Some(TokenType::Rbracket),
+            b'='  => Some(TokenType::Print),
+            b','  => Some(TokenType::Comma),
+            b'-'  => Some(TokenType::Range),
+            _ => None
+        };
+        if let Some(toktype) = single_char {
+            self.commit(toktype);
         } else if is_ident_start(c) {
             self.back();
-            // TODO this is probably slow because the hashmap is not static
-            let keywords: HashMap<&'static str, TokenType> = HashMap::from([
+            // TODO probably inefficient
+            let keywords: Vec<(&'static str, TokenType)> = vec![
                 ("accept", TokenType::Accept),
                 ("reject", TokenType::Reject),
                 ("default", TokenType::Deflt),
-            ]);
-            let mut found_kw = false;
-            for (kw, toktype) in keywords {
-                if self.handle_keyword(kw, toktype) {
-                    found_kw = true;
-                    break;
-                }
-            }
-            if !found_kw {
-                self.handle_ident()
+            ];
+            if let None = keywords.iter().find(|(kw, toktype)| self.handle_keyword(kw, *toktype)) {
+                self.handle_ident();
             }
         } else {
             self.commit(TokenType::Error);
