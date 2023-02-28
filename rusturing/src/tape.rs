@@ -1,5 +1,20 @@
 use std::fmt;
 
+fn translate_display(c: &u8) -> char {
+    match c {
+        b' ' ..= b'~' => *c as char,
+        _ => '_',
+    }
+}
+
+fn to_hex(c: u8) -> Option<char> {
+    match c {
+        0 ..= 9   => Some((b'0' + c) as char),
+        10 ..= 15 => Some((b'a' + c - 10) as char),
+        _ => None
+    }
+}
+
 pub struct Tape {
     left: Vec<u8>,
     right: Vec<u8>,
@@ -63,21 +78,29 @@ impl Tape {
             self.right[index as usize] = value;
         }
     }
-}
 
+    pub fn display_long(&self) {
+        println!("{}", self);
+        for c in self.left.iter().rev()
+                .chain(self.right.iter())
+                .map(|&c| to_hex((c >> 4) & 0x0f).unwrap()) {
+            print!("{}", c);
+        }
+        println!();
+        for c in self.left.iter().rev()
+                .chain(self.right.iter())
+                .map(|&c| to_hex(c & 0x0f).unwrap()) {
+            print!("{}", c);
+        }
+        println!();
+    }
+}
 impl fmt::Display for Tape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for c in self.left.rev() {
-            match c {
-                b'\0' => { write!(f, "_")?; }
-                _     => { write!(f, "{}", c)?; }
-            }
-        }
-        for c in self.right() {
-            match c {
-                b'\0' => { write!(f, "_")?; }
-                _     => { write!(f, "{}", c)?; }
-            }
+        for c in self.left.iter().rev()
+                .chain(self.right.iter())
+                .map(translate_display) {
+            write!(f, "{}", c)?;
         }
         Ok(())
     }
