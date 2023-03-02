@@ -229,7 +229,7 @@ impl Lexer {
         let c1 = self.peek();
         if (b' ' ..= b'~').contains(&c1) {
             let c2 = self.peek();
-            if c2 == b'\''
+            if (c1 != b'\'' && c2 == b'\'') // do not allow '''
                     || (c1 == b'x'
                         && is_hex(c2)
                         && is_hex(self.peek())

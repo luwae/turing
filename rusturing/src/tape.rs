@@ -61,7 +61,16 @@ impl Tape {
         }
     }
 
-    pub fn get(&mut self, index: i32) -> u8 {
+    pub fn get(&self, index: i32) -> Option<u8> {
+        if index < 0 {
+            // ugly
+            Some(*(self.left.get(!index as usize)?))
+        } else {
+            Some(*(self.right.get(index as usize)?))
+        }
+    }
+
+    pub fn grow_and_get(&mut self, index: i32) -> u8 {
         self.grow(index);
         if index < 0 {
             self.left[!index as usize]
@@ -80,7 +89,11 @@ impl Tape {
     }
 
     pub fn display_long(&self) {
-        println!("{}", self);
+        println!("{}", self); // short version before long version
+        for _ in 0..self.len() {
+            print!("-");
+        }
+        println!();
         for c in self.left.iter().rev()
                 .chain(self.right.iter())
                 .map(|&c| to_hex((c >> 4) & 0x0f).unwrap()) {
@@ -95,6 +108,7 @@ impl Tape {
         println!();
     }
 }
+
 impl fmt::Display for Tape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for c in self.left.iter().rev()
