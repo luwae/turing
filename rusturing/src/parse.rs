@@ -42,6 +42,8 @@ fn real_sym(sym: &str) -> u8 {
     let sym = sym.as_bytes();
     if sym.len() == 5 {
         (from_hex(sym[2]).unwrap() << 4) | from_hex(sym[3]).unwrap()
+    } else if sym[1] == b'_' {
+        0
     } else {
         sym[1]
     }
