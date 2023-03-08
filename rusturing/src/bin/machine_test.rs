@@ -21,7 +21,7 @@ fn main() {
                 break;
             },
             ExecutionState::Failed => {
-                println!("failed in state {} at position {} with sym {}", exec.get_state_name(), exec.get_pos(), exec.get_sym() as char);
+                println!("failed in state {} at position {} with sym {}", exec.get_state_name(), exec.get_pos(), exec.get_sym());
                 break;
             },
         }

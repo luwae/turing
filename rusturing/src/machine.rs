@@ -94,6 +94,10 @@ impl State {
     pub fn get_name(&self) -> &str {
         &self.name
     }
+
+    pub fn len(&self) -> usize {
+        self.branches.len()
+    }
 }
 
 pub struct Machine {
