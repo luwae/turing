@@ -81,6 +81,28 @@ impl Token {
         let to = cmp::min(self.pos.off + self.len, (*self.s).len());
         &(*self.s)[from .. to]
     }
+
+    pub fn perror(&self) {
+        let into_line = self.pos.off - self.pos.lineoff;
+        println!(":{}:{}", self.pos.lineno, into_line + 1);
+        let mut index = self.pos.lineoff;
+        loop {
+            let c = (*self.s).as_bytes()[index];
+            if c == b'\0' || c == b'\n' {
+                println!("");
+                break;
+            }
+            print!("{}", c as char);
+            index += 1;
+        }
+        for _ in 0..into_line {
+            print!(" ");
+        }
+        for _ in 0..self.len {
+            print!("~")
+        }
+        println!("");
+    }
 }
 
 impl fmt::Debug for Token {

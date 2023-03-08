@@ -14,6 +14,7 @@ fn main() {
     let mut lx = lex::Lexer::from(&s);
     while !lx.is_done() {
         println!("{:?}", lx.tok_ref());
+        lx.tok_ref().perror();
         lx.lex();
     }
     println!("{:?}", lx.tok_ref());

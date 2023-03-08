@@ -63,10 +63,9 @@ impl Tape {
 
     pub fn get(&self, index: i32) -> Option<u8> {
         if index < 0 {
-            // ugly
-            Some(*(self.left.get(!index as usize)?))
+            self.left.get(!index as usize).map(|sym| *sym)
         } else {
-            Some(*(self.right.get(index as usize)?))
+            self.right.get(index as usize).map(|sym| *sym)
         }
     }
 
