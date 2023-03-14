@@ -1,5 +1,3 @@
-use std::fmt;
-
 fn translate_display(c: &u8) -> char {
     match c {
         b' ' ..= b'~' => *c as char,
@@ -22,17 +20,21 @@ pub struct Tape {
 
 impl Tape {
     pub fn new() -> Self {
-        Tape {
+        let mut tape = Tape {
             left: Vec::new(),
             right: Vec::new(),
-        }
+        };
+        tape.grow(0);
+        tape
     }
 
     pub fn from(s: &str) -> Self {
-        Tape {
+        let mut tape = Tape {
             left: Vec::new(),
             right: s.as_bytes().to_vec(),
-        }
+        };
+        tape.grow(0);
+        tape
     }
 
     pub fn len_left(&self) -> usize {
@@ -87,8 +89,19 @@ impl Tape {
         }
     }
 
+
+    pub fn display(&self) {
+        for c in self.left.iter().rev()
+                .chain(self.right.iter())
+                .map(translate_display) {
+            print!("{}", c);
+        }
+        println!();
+    }
+
     pub fn display_long(&self) {
-        println!("{}", self); // short version before long version
+        self.display();
+
         for _ in 0..self.len() {
             print!("-");
         }
@@ -105,16 +118,5 @@ impl Tape {
             print!("{}", c);
         }
         println!();
-    }
-}
-
-impl fmt::Display for Tape {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for c in self.left.iter().rev()
-                .chain(self.right.iter())
-                .map(translate_display) {
-            write!(f, "{}", c)?;
-        }
-        Ok(())
     }
 }

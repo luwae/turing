@@ -247,8 +247,33 @@ impl Execution {
         (*self.machine).get_by_idx(self.state_idx).unwrap().get_name()
     }
 
+    fn display_pos_and_state(&self) {
+        for _ in 0..(self.tape.len_left() as i32 + self.pos) {
+            print!(" ");
+        }
+        match self.exec_state {
+            ExecutionState::Active => {
+                println!("V active@{} {}", self.pos, self.get_state_name());
+            },
+            ExecutionState::Accepted => {
+                println!("V accepted@{} {}", self.pos, self.get_state_name());
+            },
+            ExecutionState::Rejected => {
+                println!("V rejected@{} {}", self.pos, self.get_state_name());
+            },
+            ExecutionState::Failed => {
+                println!("V failed@{} {}", self.pos, self.get_state_name());
+            },
+        }
+    }
+
+    pub fn display(&self) {
+        self.display_pos_and_state();
+        self.tape.display();
+    }
+
     pub fn display_long(&self) {
-        // TODO
+        self.display_pos_and_state();
         self.tape.display_long();
     }
 }
