@@ -253,16 +253,16 @@ impl Execution {
         }
         match self.exec_state {
             ExecutionState::Active => {
-                println!("V active@{} {}", self.pos, self.get_state_name());
+                println!("V {}", self.get_state_name());
             },
             ExecutionState::Accepted => {
-                println!("V accepted@{} {}", self.pos, self.get_state_name());
+                println!("V(accepted) {}", self.get_state_name());
             },
             ExecutionState::Rejected => {
-                println!("V rejected@{} {}", self.pos, self.get_state_name());
+                println!("V(rejected) {}", self.get_state_name());
             },
             ExecutionState::Failed => {
-                println!("V failed@{} {}", self.pos, self.get_state_name());
+                println!("V(failed) {}", self.get_state_name());
             },
         }
     }

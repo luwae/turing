@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use rusturing::lex;
+use rusturing::clex::ConcreteLexer;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -11,11 +11,24 @@ fn main() {
     let file_path = &args[1];
     let s = fs::read_to_string(file_path).expect("error reading file");
 
-    let mut lx = lex::Lexer::from(&s);
-    while !lx.is_done() {
-        println!("{:?}", lx.tok_ref());
-        lx.tok_ref().perror();
-        lx.lex();
+    let mut lx = ConcreteLexer::from(&s);
+    loop {
+        match lx.lex() {
+            Ok(tok) => {
+                tok.data.display_context();
+                match tok.toktype {
+                    Some(t) => { println!("{:?}", t); }
+                    None => {
+                        println!("EOF");
+                        break;
+                    }
+                }
+            }
+            Err(()) => {
+                println!("ERROR");
+                break;
+            }
+        }
+        println!();
     }
-    println!("{:?}", lx.tok_ref());
 }

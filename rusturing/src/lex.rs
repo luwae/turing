@@ -1,25 +1,24 @@
 use std::cmp;
-use std::fmt;
 use std::rc::Rc;
 
-fn is_ident_start(c: u8) -> bool {
+pub fn is_ident_start(c: u8) -> bool {
     c == b'_'
         || (c >= b'a' && c <= b'z')
         || (c >= b'A' && c <= b'Z')
 }
 
-fn is_ident(c: u8) -> bool {
+pub fn is_ident(c: u8) -> bool {
     is_ident_start(c)
         || (c >= b'0' && c <= b'9')
 }
 
-fn is_hex(c: u8) -> bool {
+pub fn is_hex(c: u8) -> bool {
     (c >= b'0' && c <= b'9')
         || (c >= b'a' && c <= b'f')
         || (c >= b'A' && c <= b'F')
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 struct Position {
     off: usize,
     lineno: usize,
@@ -27,69 +26,30 @@ struct Position {
 }
 
 impl Position {
-    fn new() -> Self {
+    fn start() -> Self {
         Position { off: 0, lineno: 1, lineoff: 0 }
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum TokenType {
-    Eof,
-    Error,
-    Ident,
-    Sym,
-    Movel,
-    Mover,
-    Lcurly,
-    Rcurly,
-    Lbracket,
-    Rbracket,
-    Print,
-    Comma,
-    Range,
-    Accept,
-    Reject,
-    Deflt,
-}
-
-pub struct Token {
-    toktype: TokenType,
+pub struct TokenData {
     pos: Position,
     len: usize,
     s: Rc<String>,
 }
 
-impl Token {
-    fn from(s: &Rc<String>) -> Self {
-        Token {
-            toktype: TokenType::Error,
-            pos: Position::new(),
-            len: 0,
-            s: Rc::clone(s),
-        }
-    }
-
-    fn clear_at(&mut self, pos: &Position) {
-        self.toktype = TokenType::Error;
-        self.pos = *pos;
-        self.len = 0;
-    }
-
-    pub fn substring(&self) -> &str {
-        // avoid slicing outside string range (for example for Eof token)
-        let from = cmp::min(self.pos.off, (*self.s).len());
-        let to = cmp::min(self.pos.off + self.len, (*self.s).len());
-        &(*self.s)[from .. to]
-    }
-
-    pub fn perror(&self) {
+impl TokenData {
+    pub fn display_context(&self) {
         let into_line = self.pos.off - self.pos.lineoff;
         println!(":{}:{}", self.pos.lineno, into_line + 1);
         let mut index = self.pos.lineoff;
         loop {
-            let c = (*self.s).as_bytes()[index];
-            if c == b'\0' || c == b'\n' {
-                println!("");
+            if index >= self.s.len() {
+                println!();
+                break;
+            }
+            let c = self.s.as_bytes()[index];
+            if c == b'\n' {
+                println!();
                 break;
             }
             print!("{}", c as char);
@@ -101,55 +61,49 @@ impl Token {
         for _ in 0..self.len {
             print!("~")
         }
-        println!("");
+        println!();
+    }
+    
+    pub fn substring(&self) -> &str {
+        let from = cmp::min(self.pos.off, (*self.s).len());
+        let to = cmp::min(self.pos.off + self.len, (*self.s).len());
+        &(*self.s)[from .. to]
     }
 }
 
-impl fmt::Debug for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Token({:?}, {:?}, {:?}, \"{}\")", self.toktype, self.pos, self.len, self.substring())
-    }
+pub struct Token<T> {
+    pub toktype: Option<T>,
+    pub data: TokenData,
 }
 
-impl Clone for Token {
-    fn clone(&self) -> Self {
+impl<T> Token<T> {
+    pub fn from(toktype: Option<T>, data: TokenData) -> Self {
         Token {
-            toktype: self.toktype,
-            pos: self.pos,
-            len: self.len,
-            s: Rc::clone(&self.s)
+            toktype,
+            data,
         }
     }
 }
 
-#[derive(Debug)]
-pub struct Lexer {
-    tok: Token,
+pub struct LexerBase {
     curr: Position,
-    last_active: bool,
-    last: Position,
     comm: Position,
+    last: Option<Position>,
     s: Rc<String>,
 }
 
-impl Lexer {
-    pub fn from(s : &str) -> Self {
-        let stringcopy = Rc::new(s.to_string());
-        let mut lx = Lexer {
-            tok: Token::from(&stringcopy),
-            curr: Position::new(),
-            last_active: false,
-            last: Position::new(),
-            comm: Position::new(),
-            s: Rc::clone(&stringcopy),
-        };
-        lx.lex_nocheck();
-        lx
+impl LexerBase {
+    pub fn from(s: &str) -> Self {
+        LexerBase {
+            curr: Position::start(),
+            comm: Position::start(),
+            last: None,
+            s: Rc::new(s.to_string()),
+        }
     }
-
-    fn peek(&mut self) -> u8 {
-        self.last_active = true;
-        self.last = self.curr;
+    
+    pub fn peek(&mut self) -> u8 {
+        self.last = Some(self.curr);
         if self.curr.off >= (*self.s).len() {
             self.curr.off += 1;
             return b'\0';
@@ -163,32 +117,38 @@ impl Lexer {
         c
     }
 
-    fn back(&mut self) {
-        if self.last_active {
-            self.last_active = false;
-            self.curr = self.last;
-        } else {
-            panic!("back() called twice on lexer");
+    pub fn back(&mut self) {
+        match self.last {
+            Some(pos) => {
+                self.curr = pos;
+                self.last = None;
+            },
+            None => panic!("back() called twice on lexer"),
         }
     }
 
-    fn commit(&mut self, toktype: TokenType) {
+    pub fn revert(&mut self) {
+        self.curr = self.comm;
+        self.last = None;
+    }
+
+    pub fn commit(&mut self) -> TokenData {
+        let data = TokenData {
+            pos: self.comm,
+            len: self.curr.off - self.comm.off,
+            s: Rc::clone(&self.s),
+        };
         self.comm = self.curr;
-        self.tok.len = self.comm.off - self.tok.pos.off;
-        self.tok.toktype = toktype;
+        data
     }
     
-    fn commit_last(&mut self, toktype: TokenType) {
-        self.back();
-        self.commit(toktype);
+    pub fn error(&mut self, msg: &str) {
+        let data = self.commit();
+        data.display_context();
+        println!("{}", msg);
     }
 
-    fn revert(&mut self) {
-        self.curr = self.comm;
-        self.last_active = false;
-    }
-
-    fn remove_comment(&mut self) {
+    pub fn remove_comment(&mut self) {
         let mut c = self.peek();
         while c != b'\n' {
             if c == b'\0' {
@@ -199,19 +159,20 @@ impl Lexer {
         }
     }
 
-    fn remove_junk(&mut self) {
+    pub fn remove_junk(&mut self) {
         loop {
             let c = self.peek();
             if c == b'#' {
                 self.remove_comment();
             } else if c == b'\0' || (b'!' ..= b'~').contains(&c) {
-                self.commit_last(TokenType::Error);
+                self.back();
+                self.comm = self.curr;
                 return;
             }
         }
     }
-
-    fn handle_keyword(&mut self, keyword: &str, toktype: TokenType) -> bool {
+    
+    pub fn test_keyword(&mut self, keyword: &str) -> bool {
         for &c in keyword.as_bytes() {
             if self.peek() != c {
                 self.revert();
@@ -223,110 +184,14 @@ impl Lexer {
             self.revert();
             return false;
         }
-        self.commit_last(toktype);
+        self.back();
         true
     }
-
-    fn handle_ident(&mut self) {
+    
+    pub fn traverse_ident(&mut self) {
         while is_ident(self.peek()) {
             // loop
         }
-        self.commit_last(TokenType::Ident);
-    }
-
-    fn handle_string_ident(&mut self) {
-        loop {
-            let c = self.peek();
-            if c == b'\"' {
-                self.commit(TokenType::Ident);
-                return;
-            } else if !(b' ' ..= b'~').contains(&c) {
-                self.commit_last(TokenType::Error);
-                return;
-            }
-        }
-    }
-
-    fn handle_sym(&mut self) {
-        let c1 = self.peek();
-        if (b' ' ..= b'~').contains(&c1) {
-            let c2 = self.peek();
-            if (c1 != b'\'' && c2 == b'\'') // do not allow '''
-                    || (c1 == b'x'
-                        && is_hex(c2)
-                        && is_hex(self.peek())
-                        && self.peek() == b'\'') {
-                self.commit(TokenType::Sym);
-                return;
-            }
-        }
-        // fallthrough if anything is wrong
-        self.commit_last(TokenType::Error);
-    }
-
-    fn lex_nocheck(&mut self) -> TokenType {
-        self.remove_junk();
-        self.tok.clear_at(&self.curr);
-
-        let c = self.peek();
-        let single_char = match c {
-            b'\0' => Some(TokenType::Eof),
-            b'<'  => Some(TokenType::Movel),
-            b'>'  => Some(TokenType::Mover),
-            b'{'  => Some(TokenType::Lcurly),
-            b'}'  => Some(TokenType::Rcurly),
-            b'['  => Some(TokenType::Lbracket),
-            b']'  => Some(TokenType::Rbracket),
-            b'='  => Some(TokenType::Print),
-            b','  => Some(TokenType::Comma),
-            b'-'  => Some(TokenType::Range),
-            _ => None
-        };
-        if let Some(toktype) = single_char {
-            self.commit(toktype);
-        } else if c == b'\"' {
-            self.handle_string_ident();
-        } else if c == b'\'' {
-            self.handle_sym();
-        }else if is_ident_start(c) {
-            self.back();
-            // TODO probably inefficient
-            let keywords: Vec<(&'static str, TokenType)> = vec![
-                ("accept", TokenType::Accept),
-                ("reject", TokenType::Reject),
-                ("def", TokenType::Deflt),
-            ];
-            if let None = keywords.iter().find(|(kw, toktype)| self.handle_keyword(kw, *toktype)) {
-                self.handle_ident();
-            }
-        } else {
-            self.commit(TokenType::Error);
-        }
-        self.tok.toktype
-    }
-
-    pub fn lex(&mut self) -> TokenType {
-        if self.is_done() {
-            return self.tok.toktype;
-        }
-        self.lex_nocheck()
-    }
-
-    pub fn toktype(&self) -> TokenType {
-        self.tok.toktype
-    }
-
-    pub fn is_done(&self) -> bool {
-        self.tok.toktype == TokenType::Eof || self.tok.toktype == TokenType::Error
-    }
-
-    pub fn tok_clone(&self) -> Token {
-        self.tok.clone()
-    }
-    
-    pub fn tok_ref(&self) -> &Token {
-        &self.tok
+        self.back();
     }
 }
-
-// TODO use option instead of returning '\0'?

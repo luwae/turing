@@ -3,12 +3,12 @@
 }
 
 "singleterm(accept)" {
-  ['x25'] ='x20' "fl('x5f', newterm(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))"
+  ['x25'] ='x20' "fl('_', newterm(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))"
   [def] "fl('x25', p('x20', rfr('x20', p('x25', l(step(fr4('x61', 'x62', 'x41', 'x42', repl(calc1(fl('x24', lfl('x24', l(singleterm(accept))))))), fr4('x61', 'x62', 'x41', 'x42', repl(resubst(fl('x24', lfl('x24', l(singleterm(accept)))))))))))))"
 }
 
-"fl('x5f', newterm(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))" {
-  ['x5f'] "newterm(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))"
+"fl('_', newterm(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))" {
+  ['_'] "newterm(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))"
   [def] < 
 }
 
@@ -30,13 +30,13 @@
 }
 
 "newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))" {
-  ['x30'] ='x61' "fl('x5f', p('x30', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))"
-  ['x31'] ='x62' "fl('x5f', p('x31', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))"
-  [def] "fl('x5f', p('x30', l(p('x23', rfr('x23', l(l(add_bit(fl('x23', r(r(newterm_prune(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))))))))"
+  ['x30'] ='x61' "fl('_', p('x30', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))"
+  ['x31'] ='x62' "fl('_', p('x31', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))"
+  [def] "fl('_', p('x30', l(p('x23', rfr('x23', l(l(add_bit(fl('x23', r(r(newterm_prune(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))))))))"
 }
 
-"fl('x5f', p('x30', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))" {
-  ['x5f'] "p('x30', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))"
+"fl('_', p('x30', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))" {
+  ['_'] "p('x30', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))"
   [def] < 
 }
 
@@ -54,8 +54,8 @@
   ['x62', 'x42'] ='x31' "l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))"
 }
 
-"fl('x5f', p('x31', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))" {
-  ['x5f'] "p('x31', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))"
+"fl('_', p('x31', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))" {
+  ['_'] "p('x31', fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))"
   [def] < 
 }
 
@@ -63,8 +63,8 @@
   [def] ='x31' "fr2('x61', 'x62', resubst(l(newterm_rec(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))"
 }
 
-"fl('x5f', p('x30', l(p('x23', rfr('x23', l(l(add_bit(fl('x23', r(r(newterm_prune(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))))))))" {
-  ['x5f'] "p('x30', l(p('x23', rfr('x23', l(l(add_bit(fl('x23', r(r(newterm_prune(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))))))))"
+"fl('_', p('x30', l(p('x23', rfr('x23', l(l(add_bit(fl('x23', r(r(newterm_prune(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))))))))" {
+  ['_'] "p('x30', l(p('x23', rfr('x23', l(l(add_bit(fl('x23', r(r(newterm_prune(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))))))))"
   [def] < 
 }
 
@@ -116,7 +116,7 @@
 }
 
 "newterm_prune(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))" {
-  ['x30'] <='x23'<='x5f'> "rfr('x23', l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))"
+  ['x30'] <='x23'<='_'> "rfr('x23', l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))"
   [def] "rfr('x23', l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))"
 }
 
@@ -134,17 +134,17 @@
 }
 
 "newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))" {
-  ['x30', 'x31'] "subst(fl('x5f', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))))"
-  [def] <='x31' "fl('x5f', p('x23', l(p('x25', fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))"
+  ['x30', 'x31'] "subst(fl('_', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))))"
+  [def] <='x31' "fl('_', p('x23', l(p('x25', fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))"
 }
 
-"subst(fl('x5f', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))))" {
-  ['x30'] ='x61' "fl('x5f', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))"
-  ['x31'] ='x62' "fl('x5f', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))"
+"subst(fl('_', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))))" {
+  ['x30'] ='x61' "fl('_', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))"
+  ['x31'] ='x62' "fl('_', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))"
 }
 
-"fl('x5f', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))" {
-  ['x5f'] "p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))"
+"fl('_', p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))))" {
+  ['_'] "p('x30', fr2('x61', 'x62', resubst(l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))))"
   [def] < 
 }
 
@@ -162,8 +162,8 @@
   ['x62', 'x42'] ='x31' "l(newterm_numerator(fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))"
 }
 
-"fl('x5f', p('x23', l(p('x25', fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))" {
-  ['x5f'] "p('x23', l(p('x25', fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))"
+"fl('_', p('x23', l(p('x25', fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept))))))))))))))" {
+  ['_'] "p('x23', l(p('x25', fr('x24', r(singleterm_changepn(r(r(r(subst(rfr('x61', resubst(singleterm(accept))))))), r(r(r(substbig(rfr('x61', resubst(singleterm(accept)))))))))))))"
   [def] < 
 }
 
@@ -535,7 +535,7 @@
 }
 
 "repl_frompos(calc1(fl('x24', lfl('x24', l(singleterm(accept))))))" {
-  ['x30', 'x5f'] ='x41'< "calc1(fl('x24', lfl('x24', l(singleterm(accept)))))"
+  ['x30', '_'] ='x41'< "calc1(fl('x24', lfl('x24', l(singleterm(accept)))))"
   ['x31'] ='x42'< "calc1(fl('x24', lfl('x24', l(singleterm(accept)))))"
 }
 
@@ -575,7 +575,7 @@
 }
 
 "repl_fromneg(calc1(fl('x24', lfl('x24', l(singleterm(accept))))))" {
-  ['x30', 'x5f'] ='x61'< "calc1(fl('x24', lfl('x24', l(singleterm(accept)))))"
+  ['x30', '_'] ='x61'< "calc1(fl('x24', lfl('x24', l(singleterm(accept)))))"
   ['x31'] ='x62'< "calc1(fl('x24', lfl('x24', l(singleterm(accept)))))"
 }
 
@@ -662,7 +662,7 @@
 }
 
 "repl_frompos(resubst(fl('x24', lfl('x24', l(singleterm(accept))))))" {
-  ['x30', 'x5f'] ='x41'< "resubst(fl('x24', lfl('x24', l(singleterm(accept)))))"
+  ['x30', '_'] ='x41'< "resubst(fl('x24', lfl('x24', l(singleterm(accept)))))"
   ['x31'] ='x42'< "resubst(fl('x24', lfl('x24', l(singleterm(accept)))))"
 }
 
@@ -672,7 +672,7 @@
 }
 
 "repl_fromneg(resubst(fl('x24', lfl('x24', l(singleterm(accept))))))" {
-  ['x30', 'x5f'] ='x61'< "resubst(fl('x24', lfl('x24', l(singleterm(accept)))))"
+  ['x30', '_'] ='x61'< "resubst(fl('x24', lfl('x24', l(singleterm(accept)))))"
   ['x31'] ='x62'< "resubst(fl('x24', lfl('x24', l(singleterm(accept)))))"
 }
 

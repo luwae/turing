@@ -1,5 +1,6 @@
 use crate::machine::{Primitive, Transition, Branch, State, Machine};
-use crate::lex::{TokenType, Token, Lexer};
+use crate::lex::{Token, LexerBase};
+use crate::lex::concrete::ConcreteToken;
 use std::collections::HashMap;
 
 struct NameResolve {
@@ -10,11 +11,11 @@ struct NameResolve {
 
 struct StateDefinition {
     idx: usize, // to resolve names
-    definition: Token, // to print errors on double definitions
+    definition: Token<ConcreteToken>, // to print errors on double definitions
 }
 
 struct Parser {
-    lx: Lexer,
+    lx: LexerBase<ConcreteToken>,
     state_defs: HashMap<String, StateDefinition>,
     resolves: Vec<NameResolve>,
     states: Vec<State>,
