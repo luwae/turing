@@ -16,7 +16,7 @@ struct StateDefinition {
 
 struct Parser {
     lx: ConcreteLexer,
-    last_token: Token<ConcreteToken>,
+    last_token: Option<Token<ConcreteToken>>,
     state_defs: HashMap<String, StateDefinition>,
     resolves: Vec<NameResolve>,
     machine: Box<Machine>,
@@ -52,10 +52,10 @@ fn real_sym(sym: &str) -> u8 {
 
 pub fn parse(input: &str) -> Result<Box<Machine>, ()> {
     let mut lx = ConcreteLexer::from(input);
-    let tok = lx.lex()?;
+    let last_token = lx.lex()?;
     let mut ps = Parser {
         lx,
-        last_token: tok, 
+        last_token, 
         state_defs: HashMap::new(),
         resolves: Vec::new(),
         machine: Box::new(Machine::new()),
@@ -72,7 +72,7 @@ pub fn parse(input: &str) -> Result<Box<Machine>, ()> {
                     .set_trans(Transition::Continue(state_def.idx));
             }
             None => {
-                token_error(&resolve.definition, "could not find this state");
+                parse_error(&resolve.definition, "could not find this state");
                 return Err(());
             }
         }
@@ -81,47 +81,57 @@ pub fn parse(input: &str) -> Result<Box<Machine>, ()> {
     Ok(ps.machine)
 }
 
-fn token_error(tok: &Token<ConcreteToken>, msg: &str) {
+fn parse_error(tok: &Token<ConcreteToken>, msg: &str) {
     tok.data.display_context();
     println!("{}", msg);
 }
 
 impl Parser {
-    fn lex() -> Result<(), ()> {
+    fn nexttoken(&mut self) -> Result<(), ()> {
         self.last_token = self.lx.lex()?;
         Ok(())
     }
+    
+    fn have_token(&self, toktype: ConcreteToken) -> bool {
+        match &self.last_token {
+            Some(tok) => tok.toktype == toktype,
+            None => false
+        }
+    }
 
-    fn token_error_current(&self, msg: &str) {
-        token_error(&self.last_token, msg);
+    fn parse_error_current(&self, msg: &str) {
+        match &self.last_token {
+            Some(tok) => { parse_error(tok, msg); }
+            None => { println!("EOF: {}", msg); }
+        }
     }
 
     fn expect(&self, toktype: ConcreteToken, msg: &str) -> Result<(), ()> {
-        if let Some(t) = self.last_token.toktype && t == toktype {
+        if self.have_token(toktype) {
             Ok(())
         } else {
-            self.token_error_current(msg);
+            self.parse_error_current(msg);
             Err(())
         }
     }
     
     fn expect_eof(&self, msg: &str) -> Result<(), ()> {
-        if let None = self.last_token.toktype {
+        if let None = self.last_token {
             Ok(())
         } else {
-            self.token_error_current(msg);
+            self.parse_error_current(msg);
             Err(())
         }
     }
 
-    fn expect_and_lex(&mut self, toktype: ConcreteToken, msg: &str) -> Result<(), ()> {
+    fn expect_and_nexttoken(&mut self, toktype: ConcreteToken, msg: &str) -> Result<(), ()> {
         self.expect(toktype, msg)?;
-        self.lex()
+        self.nexttoken()
     }
 
     fn parse_start(&mut self) -> Result<(), ()> {
         self.parse_state()?;
-        while self.last_token.toktype == ConcreteToken::Ident {
+        while self.have_token(ConcreteToken::Ident) {
             self.parse_state()?;
         }
         self.expect_eof("expected state definition or EOF")
@@ -129,29 +139,29 @@ impl Parser {
 
     fn parse_state(&mut self) -> Result<(), ()> {
         self.expect(ConcreteToken::Ident, "expected state name")?;
-        let name = real_ident(self.last_token.substring());
+        let name = real_ident(self.last_token.as_ref().unwrap().substring());
         if let Some(state_def) = self.state_defs.get(name) {
-            self.token_error_current("state defined twice");
-            token_error(&state_def.definition, "note: previous definition here");
+            self.parse_error_current("state defined twice");
+            parse_error(&state_def.definition, "note: previous definition here");
             return Err(())
         }
         self.state_defs.insert(name.to_string(),
             StateDefinition {
-                idx: self.states.len(), 
-                definition: self.last_token,
+                idx: self.machine.len(), 
+                definition: self.last_token.as_ref().unwrap().clone(),   
             },
         );
         let mut state = State::new(name.to_string());
-        self.lex();
-        self.expect_and_lex(ConcreteToken::Lcurly, "expected start of state body")?;
+        self.nexttoken()?;
+        self.expect_and_nexttoken(ConcreteToken::Lcurly, "expected start of state body")?;
         self.parse_statebody(&mut state)?;
-        self.expect_and_lex(ConcreteToken::Rcurly, "expected end of state body")?;
-        self.states.push(state);
+        self.expect_and_nexttoken(ConcreteToken::Rcurly, "expected end of state body")?;
+        self.machine.push(state);
         Ok(())
     }
 
     fn parse_statebody(&mut self, state: &mut State) -> Result<(), ()> {
-        while let Some(ConcreteToken::Lbracket) = self.last_token.toktype {
+        while self.have_token(ConcreteToken::Lbracket) {
             let mut branch = Branch::new();
             let was_deflt = self.parse_branch(&mut branch, state.len())?;
             state.push(branch);
@@ -163,76 +173,70 @@ impl Parser {
     }
 
     fn parse_branch(&mut self, branch: &mut Branch, branch_idx: usize) -> Result<bool, ()> {
-        self.expect_and_lex(ConcreteToken::Lbracket, "expected start of branch selector")?;
-        let was_deflt = match self.lx.toktype() {
+        self.expect_and_nexttoken(ConcreteToken::Lbracket, "expected start of branch selector")?;
+        let was_deflt = match self.last_token.as_ref().unwrap().toktype {
             ConcreteToken::Deflt => {
                 branch.set_deflt(true);
-                self.lx.lex();
+                self.nexttoken()?;
                 true
             },
             _ => {
                 self.parse_symbol_or_symrange(branch)?;
-                while self.lx.toktype() == TokenType::Comma {
-                    self.lx.lex();
+                while self.have_token(ConcreteToken::Comma) {
+                    self.nexttoken()?;
                     self.parse_symbol_or_symrange(branch)?;
                 }
                 false
             },
         };
-        self.expect_and_lex(TokenType::Rbracket, "expected end of branch selector")?;
+        self.expect_and_nexttoken(ConcreteToken::Rbracket, "expected end of branch selector")?;
 
         loop {
-            match self.lx.toktype() {
-                TokenType::Movel => {
-                    branch.add_primitive(Primitive::Movel);
-                    self.lx.lex();
-                },
-                TokenType::Mover => {
-                    branch.add_primitive(Primitive::Mover);
-                    self.lx.lex();
-                },
-                TokenType::Print => {
-                    self.lx.lex();
-                    self.expect(TokenType::Sym, "expected symbol to print")?;
-                    let sym = real_sym(self.lx.tok_ref().substring());
-                    branch.add_primitive(Primitive::Print(sym));
-                    self.lx.lex();
-                },
-                _ => { break; }
+            if self.have_token(ConcreteToken::Movel) {
+                branch.add_primitive(Primitive::Movel);
+                self.nexttoken()?;
+            } else if self.have_token(ConcreteToken::Mover) {
+                branch.add_primitive(Primitive::Mover);
+                self.nexttoken()?;
+            } else if self.have_token(ConcreteToken::Print) {
+                self.nexttoken()?;
+                self.expect(ConcreteToken::Sym, "expected symbol to print")?;
+                let sym = real_sym(self.last_token.as_ref().unwrap().substring());
+                branch.add_primitive(Primitive::Print(sym));
+                self.nexttoken()?;
+            } else {
+                break;
             }
         }
 
-        match self.lx.toktype() {
-            TokenType::Accept => {
-                branch.set_trans(Transition::Accept);
-                self.lx.lex();
-            },
-            TokenType::Reject => {
-                branch.set_trans(Transition::Reject);
-                self.lx.lex();
-            },
-            TokenType::Ident => {
-                self.resolves.push(NameResolve {
-                    state_idx: self.states.len(),
-                    branch_idx: branch_idx,
-                    definition: self.lx.tok_clone(),
-                });
-                self.lx.lex();
-            },
-            _ => { branch.set_trans(Transition::Continue(self.states.len())); }
+        if self.have_token(ConcreteToken::Accept) {
+            branch.set_trans(Transition::Accept);
+            self.nexttoken()?;
+        } else if self.have_token(ConcreteToken::Reject) {
+            branch.set_trans(Transition::Reject);
+            self.nexttoken()?;
+        } else if self.have_token(ConcreteToken::Ident) {
+            self.resolves.push(NameResolve {
+                state_idx: self.machine.len(),
+                branch_idx: branch_idx,
+                definition: self.last_token.as_ref().unwrap().clone(),
+            });
+            self.nexttoken()?;
+        } else {
+            branch.set_trans(Transition::Continue(self.machine.len()));
         }
         Ok(was_deflt)
     }
     
     fn parse_symbol_or_symrange(&mut self, branch: &mut Branch) -> Result<(), ()> {
-        self.expect(TokenType::Sym, "expected symbol")?;
-        let start = real_sym(self.lx.tok_ref().substring());
-        self.lx.lex();
-        if self.lx.toktype() == TokenType::Range {
-            self.lx.lex();
-            self.expect(TokenType::Sym, "expected range end")?;
-            let end = real_sym(self.lx.tok_ref().substring());
-            self.lx.lex();
+        self.expect(ConcreteToken::Sym, "expected symbol")?;
+        let start = real_sym(self.last_token.as_ref().unwrap().substring());
+        self.nexttoken()?;
+        if self.have_token(ConcreteToken::Range) {
+            self.nexttoken()?;
+            self.expect(ConcreteToken::Sym, "expected symbol range end")?;
+            let end = real_sym(self.last_token.as_ref().unwrap().substring());
+            self.nexttoken()?;
             for c in start ..= end { // might be empty, but we explicitly allow that
                 branch.add_sym(c);
             }

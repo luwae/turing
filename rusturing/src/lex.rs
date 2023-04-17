@@ -39,6 +39,7 @@ impl Position {
     }
 }
 
+#[derive(Clone)]
 pub struct TokenData {
     pos: Position,
     len: usize,
@@ -79,6 +80,7 @@ impl TokenData {
     }
 }
 
+#[derive(Clone)]
 pub struct Token<T> {
     pub toktype: T,
     pub data: TokenData,

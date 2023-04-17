@@ -1,5 +1,5 @@
 use rusturing::machine::{Execution, ExecutionState};
-use rusturing::parse::parse; 
+use rusturing::cparse; 
 use std::env;
 use std::fs;
 use std::rc::Rc;
@@ -18,7 +18,7 @@ fn main() {
         _ => &args[2],
     };
 
-    if let Ok(machine) = parse(&s) {
+    if let Ok(machine) = cparse::parse(&s) {
         let machine = Rc::new(*machine);
         let mut exec = Execution::from(&machine, tape_input);
         loop {
