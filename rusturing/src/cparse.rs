@@ -1,12 +1,12 @@
 use crate::machine::{Primitive, Transition, Branch, State, Machine};
-use crate::lex::{Token, LexerBase};
-use crate::lex::concrete::ConcreteToken;
+use crate::lex::{Token};
+use crate::clex::{ConcreteToken, ConcreteLexer};
 use std::collections::HashMap;
 
 struct NameResolve {
     state_idx: usize,
     branch_idx: usize,
-    definition: Token,
+    definition: Token<ConcreteToken>,
 }
 
 struct StateDefinition {
@@ -15,10 +15,10 @@ struct StateDefinition {
 }
 
 struct Parser {
-    lx: LexerBase<ConcreteToken>,
+    lx: ConcreteLexer,
+    last_token: Token<ConcreteToken>,
     state_defs: HashMap<String, StateDefinition>,
     resolves: Vec<NameResolve>,
-    states: Vec<State>,
     machine: Box<Machine>,
 }
 
@@ -43,7 +43,7 @@ fn real_sym(sym: &str) -> u8 {
     let sym = sym.as_bytes();
     if sym.len() == 5 {
         (from_hex(sym[2]).unwrap() << 4) | from_hex(sym[3]).unwrap()
-    } else if sym[1] == b'_' {
+    } else if sym[1] == b'_' { // blank symbol '_' is mapped to 0x00
         0
     } else {
         sym[1]
@@ -51,11 +51,13 @@ fn real_sym(sym: &str) -> u8 {
 }
 
 pub fn parse(input: &str) -> Result<Box<Machine>, ()> {
+    let mut lx = ConcreteLexer::from(input);
+    let tok = lx.lex()?;
     let mut ps = Parser {
-        lx: Lexer::from(input),
+        lx,
+        last_token: tok, 
         state_defs: HashMap::new(),
         resolves: Vec::new(),
-        states: Vec::new(),
         machine: Box::new(Machine::new()),
     };
     ps.parse_start()?;
@@ -64,83 +66,92 @@ pub fn parse(input: &str) -> Result<Box<Machine>, ()> {
     for resolve in ps.resolves.iter() {
         match ps.state_defs.get(real_ident(resolve.definition.substring())) {
             Some(state_def) => {
-                ps.states[resolve.state_idx]
+                ps.machine
+                    .get_by_idx_mut(resolve.state_idx).unwrap()
                     .get_by_idx_mut(resolve.branch_idx).unwrap()
                     .set_trans(Transition::Continue(state_def.idx));
             }
             None => {
-                ps.perror(&resolve.definition, "could not find this state");
+                token_error(&resolve.definition, "could not find this state");
                 return Err(());
             }
         }
     }
 
-    // move states to machine
-    for state in ps.states.into_iter() {
-        (*ps.machine).push(state);
-    }
-
     Ok(ps.machine)
 }
 
+fn token_error(tok: &Token<ConcreteToken>, msg: &str) {
+    tok.data.display_context();
+    println!("{}", msg);
+}
+
 impl Parser {
-    fn perror(&self, tok: &Token, msg: &str) {
-        tok.perror();
-        println!("{}", msg);
+    fn lex() -> Result<(), ()> {
+        self.last_token = self.lx.lex()?;
+        Ok(())
     }
 
-    fn perror_current(&self, msg: &str) {
-        self.perror(self.lx.tok_ref(), msg)
+    fn token_error_current(&self, msg: &str) {
+        token_error(&self.last_token, msg);
     }
 
-    fn expect(&self, toktype: TokenType, msg: &str) -> Result<(), ()> {
-        if self.lx.toktype() == toktype {
+    fn expect(&self, toktype: ConcreteToken, msg: &str) -> Result<(), ()> {
+        if let Some(t) = self.last_token.toktype && t == toktype {
             Ok(())
         } else {
-            self.perror_current(msg);
+            self.token_error_current(msg);
+            Err(())
+        }
+    }
+    
+    fn expect_eof(&self, msg: &str) -> Result<(), ()> {
+        if let None = self.last_token.toktype {
+            Ok(())
+        } else {
+            self.token_error_current(msg);
             Err(())
         }
     }
 
-    fn expect_and_lex(&mut self, toktype: TokenType, msg: &str) -> Result<(), ()> {
+    fn expect_and_lex(&mut self, toktype: ConcreteToken, msg: &str) -> Result<(), ()> {
         self.expect(toktype, msg)?;
-        self.lx.lex();
-        Ok(())
+        self.lex()
     }
 
     fn parse_start(&mut self) -> Result<(), ()> {
         self.parse_state()?;
-        while self.lx.toktype() == TokenType::Ident {
+        while self.last_token.toktype == ConcreteToken::Ident {
             self.parse_state()?;
         }
-        self.expect(TokenType::Eof, "expected state definition or EOF")
+        self.expect_eof("expected state definition or EOF")
     }
 
     fn parse_state(&mut self) -> Result<(), ()> {
-        self.expect(TokenType::Ident, "expected state name")?;
-        let name = real_ident(self.lx.tok_ref().substring());
+        self.expect(ConcreteToken::Ident, "expected state name")?;
+        let name = real_ident(self.last_token.substring());
         if let Some(state_def) = self.state_defs.get(name) {
-            self.perror_current("state defined twice");
-            self.perror(&state_def.definition, "note: previous definition here");
+            self.token_error_current("state defined twice");
+            token_error(&state_def.definition, "note: previous definition here");
             return Err(())
         }
         self.state_defs.insert(name.to_string(),
             StateDefinition {
                 idx: self.states.len(), 
-                definition: self.lx.tok_clone(),
+                definition: self.last_token,
             },
         );
         let mut state = State::new(name.to_string());
-        self.lx.lex();
-        self.expect_and_lex(TokenType::Lcurly, "expected start of state body")?;
+        self.lex();
+        self.expect_and_lex(ConcreteToken::Lcurly, "expected start of state body")?;
         self.parse_statebody(&mut state)?;
-        self.expect_and_lex(TokenType::Rcurly, "expected end of state body")?;
+        self.expect_and_lex(ConcreteToken::Rcurly, "expected end of state body")?;
         self.states.push(state);
         Ok(())
     }
 
     fn parse_statebody(&mut self, state: &mut State) -> Result<(), ()> {
-        while self.lx.toktype() == TokenType::Lbracket {
+        while let Some(ConcreteToken::Lbracket) = self.last_token.toktype {
             let mut branch = Branch::new();
             let was_deflt = self.parse_branch(&mut branch, state.len())?;
             state.push(branch);
@@ -152,9 +163,9 @@ impl Parser {
     }
 
     fn parse_branch(&mut self, branch: &mut Branch, branch_idx: usize) -> Result<bool, ()> {
-        self.expect_and_lex(TokenType::Lbracket, "expected start of branch selector")?;
+        self.expect_and_lex(ConcreteToken::Lbracket, "expected start of branch selector")?;
         let was_deflt = match self.lx.toktype() {
-            TokenType::Deflt => {
+            ConcreteToken::Deflt => {
                 branch.set_deflt(true);
                 self.lx.lex();
                 true

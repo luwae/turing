@@ -14,15 +14,13 @@ fn main() {
     let mut lx = ConcreteLexer::from(&s);
     loop {
         match lx.lex() {
-            Ok(tok) => {
-                tok.data.display_context();
-                match tok.toktype {
-                    Some(t) => { println!("{:?}", t); }
-                    None => {
-                        println!("EOF");
-                        break;
-                    }
-                }
+            Ok(Some(tok)) => {
+                tok.display_context();
+                println!("{:?}", tok.toktype);
+            }
+            Ok(None) => {
+                println!("EOF");
+                break;
             }
             Err(()) => {
                 println!("ERROR");

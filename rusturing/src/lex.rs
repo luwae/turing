@@ -18,6 +18,14 @@ pub fn is_hex(c: u8) -> bool {
         || (c >= b'A' && c <= b'F')
 }
 
+pub fn is_printable(c: u8) -> bool {
+    (b' ' ..= b'~').contains(&c)
+}
+
+pub fn is_junk(c: u8) -> bool {
+    c == b' ' || c == b'\n' || c == b'\t' 
+}
+
 #[derive(Copy, Clone)]
 struct Position {
     off: usize,
@@ -72,16 +80,24 @@ impl TokenData {
 }
 
 pub struct Token<T> {
-    pub toktype: Option<T>,
+    pub toktype: T,
     pub data: TokenData,
 }
 
 impl<T> Token<T> {
-    pub fn from(toktype: Option<T>, data: TokenData) -> Self {
+    pub fn from(toktype: T, data: TokenData) -> Self {
         Token {
             toktype,
             data,
         }
+    }
+    
+    pub fn display_context(&self) {
+        self.data.display_context();
+    }
+    
+    pub fn substring(&self) -> &str {
+        self.data.substring()
     }
 }
 
@@ -102,11 +118,11 @@ impl LexerBase {
         }
     }
     
-    pub fn peek(&mut self) -> u8 {
+    pub fn peek(&mut self) -> Option<u8> {
         self.last = Some(self.curr);
         if self.curr.off >= (*self.s).len() {
             self.curr.off += 1;
-            return b'\0';
+            return None;
         }
         let c = (*self.s).as_bytes()[self.curr.off];
         if c == b'\n' {
@@ -114,7 +130,7 @@ impl LexerBase {
             self.curr.lineoff = self.curr.off + 1;
         }
         self.curr.off += 1;
-        c
+        Some(c)
     }
 
     pub fn back(&mut self) {
@@ -123,7 +139,7 @@ impl LexerBase {
                 self.curr = pos;
                 self.last = None;
             },
-            None => panic!("back() called twice on lexer"),
+            None => panic!("back() has no last state"),
         }
     }
 
@@ -132,41 +148,58 @@ impl LexerBase {
         self.last = None;
     }
 
-    pub fn commit(&mut self) -> TokenData {
-        let data = TokenData {
+    pub fn commit(&mut self) {
+        self.comm = self.curr;
+        self.last = None;
+    }
+    
+    pub fn commit_last(&mut self) {
+        self.back();
+        self.commit();
+    }
+    
+    pub fn tokdata(&self) -> TokenData {
+        TokenData {
             pos: self.comm,
             len: self.curr.off - self.comm.off,
             s: Rc::clone(&self.s),
-        };
-        self.comm = self.curr;
-        data
+        }
     }
     
-    pub fn error(&mut self, msg: &str) {
-        let data = self.commit();
-        data.display_context();
+    pub fn error(&self, msg: &str) {
+        self.tokdata().display_context();
         println!("{}", msg);
+    }
+    
+    pub fn error_last(&mut self, msg: &str) {
+        self.back();
+        self.error(msg);
     }
 
     pub fn remove_comment(&mut self) {
-        let mut c = self.peek();
-        while c != b'\n' {
-            if c == b'\0' {
+        loop {
+            if let Some(c) = self.peek() {
+                if c == b'\n' {
+                    break;
+                }
+            } else {
                 self.back();
                 return;
             }
-            c = self.peek();
         }
     }
 
     pub fn remove_junk(&mut self) {
         loop {
-            let c = self.peek();
-            if c == b'#' {
-                self.remove_comment();
-            } else if c == b'\0' || (b'!' ..= b'~').contains(&c) {
-                self.back();
-                self.comm = self.curr;
+            if let Some(c) = self.peek() {
+                if c == b'#' {
+                    self.remove_comment();
+                } else if !is_junk(c) {
+                    self.commit_last();
+                    return;
+                }
+            } else {
+                self.commit_last();
                 return;
             }
         }
@@ -174,24 +207,44 @@ impl LexerBase {
     
     pub fn test_keyword(&mut self, keyword: &str) -> bool {
         for &c in keyword.as_bytes() {
-            if self.peek() != c {
+            if let Some(cc) = self.peek() {
+                if cc != c {
+                    self.revert();
+                    return false;
+                }
+            } else {
                 self.revert();
                 return false;
             }
         }
-        let after = self.peek();
-        if is_ident(after) {
-            self.revert();
-            return false;
+        
+        if let Some(c) = self.peek() {
+            if is_ident(c) {
+                self.revert();
+                return false;
+            }
         }
         self.back();
         true
     }
     
     pub fn traverse_ident(&mut self) {
-        while is_ident(self.peek()) {
-            // loop
+        while let Some(c) = self.peek() {
+            if !is_ident(c) {
+                break;
+            }
         }
         self.back();
+    }
+
+    pub fn token_and_commit<T>(&mut self, toktype: T) -> Token<T> {
+        let tok = Token::from(toktype, self.tokdata());
+        self.commit();
+        tok
+    }
+    
+    pub fn token_and_commit_last<T>(&mut self, toktype: T) -> Token<T> {
+        self.back();
+        self.token_and_commit(toktype)
     }
 }
