@@ -2,5 +2,5 @@ __pycache__
 *.swp
 *.o
 *_test
-experimental
 tmrun
+atm2tm

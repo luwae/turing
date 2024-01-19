@@ -23,10 +23,6 @@ void expect(Lexer &lx, TokenType tt, bool lex_after = true) {
 void Parser::parse() {
     parse_s();
     
-    for (const auto &s: states)
-        cout << s << "\n";
-    cout << "\n\n\n" << endl;
-
     if (states[0].args.size() > 0) {
         throw runtime_error("main state is not allowed to have arguments");
     }
@@ -37,7 +33,6 @@ void Parser::parse() {
 }
 
 void Parser::parse_s() {
-    cout << "parse_s" << endl;
     do {
         expect(lx, TokenType::ident, false);
         string name = lx.gettok().substring();
@@ -66,7 +61,6 @@ void Parser::parse_s() {
 }
 
 void Parser::parse_stateargs(State &s) {
-    cout << "parse_stateargs" << endl;
     if (lx.gettok().gettype() == TokenType::lcurly) {
         return;
     } else if (lx.gettok().gettype() == TokenType::lpar) {
@@ -84,7 +78,6 @@ void Parser::parse_stateargs(State &s) {
 }
 
 void Parser::parse_stateargs2(State &s) {
-    cout << "parse_stateargs2" << endl;
     if (lx.gettok().gettype() == TokenType::ident) {
         s.args.emplace_back(StateArg::Type::sat_state_var, lx.gettok().substring());
         lx.lex();
@@ -116,7 +109,6 @@ unsigned char convert_immediate(const string &s) {
 }
 
 void Parser::parse_statebody(State &s) {
-    cout << "parse_statebody" << endl;
     if (lx.gettok().gettype() == TokenType::rcurly) {
         return;
     }
@@ -129,7 +121,6 @@ void Parser::parse_statebody(State &s) {
 }
 
 void Parser::parse_statebody2(State &s) {
-    cout << "parse_statebody2" << endl;
     if (lx.gettok().gettype() == TokenType::def) {
         lx.lex();
         Branch b;
@@ -165,7 +156,6 @@ int Parser::find_state_arg(State &s, StateArg::Type t, bool error) {
 }
 
 Sym Parser::parse_sym(State &s) {
-    cout << "parse_sym" << endl;
     if (lx.gettok().gettype() == TokenType::sym) {
         Sym sy(false, convert_immediate(lx.gettok().substring())); 
         lx.lex();
@@ -182,7 +172,6 @@ Sym Parser::parse_sym(State &s) {
 }
 
 void Parser::parse_symrange(State &s, Branch &b, Sym prev) {
-    cout << "parse_symrange" << endl;
     if (lx.gettok().gettype() == TokenType::range) {
     	lx.lex();
         Sym next = parse_sym(s);
@@ -196,7 +185,6 @@ void Parser::parse_symrange(State &s, Branch &b, Sym prev) {
 }
 
 void Parser::parse_symargs(State &s, Branch &b) {
-    cout << "parse_symargs" << endl;
     while (lx.gettok().gettype() == TokenType::comma) {
         lx.lex();
         parse_symrange(s, b, parse_sym(s));
@@ -204,7 +192,6 @@ void Parser::parse_symargs(State &s, Branch &b) {
 }
 
 void Parser::parse_actions(State &s, Branch &b) {
-    cout << "parse_actions" << endl;
     while (true) {
         if (lx.gettok().gettype() == TokenType::movel) {
             lx.lex();
@@ -222,7 +209,6 @@ void Parser::parse_actions(State &s, Branch &b) {
 }
 
 void Parser::parse_nextstate(State &s, Branch &b) {
-    cout << "parse_nextstate" << endl;
     if (lx.gettok().gettype() == TokenType::lbracket || lx.gettok().gettype() == TokenType::rcurly) {
         return;
     }
@@ -230,7 +216,6 @@ void Parser::parse_nextstate(State &s, Branch &b) {
 }
 
 std::unique_ptr<Call> Parser::parse_call(State &s) {
-    cout << "parse_call" << endl;
     std::unique_ptr<Call> c = std::make_unique<Call>();
     if (lx.gettok().gettype() == TokenType::accept) {
         lx.lex();
@@ -258,7 +243,6 @@ std::unique_ptr<Call> Parser::parse_call(State &s) {
 }
 
 std::unique_ptr<Call> Parser::parse_callargs(State &s, std::unique_ptr<Call> c) {
-    cout << "parse_callargs" << endl;
     if (lx.gettok().gettype() == TokenType::lpar) {
         lx.lex();
         c = parse_callargs2(s, std::move(c));
@@ -268,7 +252,6 @@ std::unique_ptr<Call> Parser::parse_callargs(State &s, std::unique_ptr<Call> c) 
 }
 
 std::unique_ptr<Call> Parser::parse_callargs2(State &s, std::unique_ptr<Call> c) {
-    cout << "parse_callargs2" << endl;
     if (lx.gettok().gettype() == TokenType::sym || lx.gettok().gettype() == TokenType::varsym) {
         c->args.emplace_back(parse_sym(s));
     } else {
@@ -278,7 +261,6 @@ std::unique_ptr<Call> Parser::parse_callargs2(State &s, std::unique_ptr<Call> c)
 }
 
 std::unique_ptr<Call> Parser::parse_callargs3(State &s, std::unique_ptr<Call> c) {
-    cout << "parse_callargs3" << endl;
     if (lx.gettok().gettype() == TokenType::rpar) {
         return c;
     }

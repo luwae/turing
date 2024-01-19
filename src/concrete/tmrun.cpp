@@ -12,22 +12,10 @@ using std::stringstream;
 using parse::Parser;
 using std::string;
 
-bool file_extension(const string &name, const string &ext) {
-    if (name.length() >= ext.length()) {
-        return name.compare(name.length() - ext.length(), ext.length(), ext) == 0;
-    }
-    return false;
-}
-
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         cout << "usage: tmrun <machine file> [<tape input>]" << endl;
         return -1;
-    }
-    
-    if (!file_extension(argv[1], ".tm")) {
-    	cout << "error: only supports .tm machine files" << endl;
-    	return -1;
     }
     
     ifstream in(argv[1]);
