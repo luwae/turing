@@ -5,6 +5,8 @@ The tools and machines in this repository have no practical relevance, they are 
 
 **NOTE**: The main branch contains the last working version implemented in C++. It's not very well documented. I plan on doing a Rust version eventually.
 
+The main contribution of this repository is the pi turing machine. This is the goal I wanted to achieve with skeleton tables.
+
 ## Features
  * abstract turing machines
     + language grammar
