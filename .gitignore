@@ -4,3 +4,5 @@ __pycache__
 *_test
 tmrun
 atm2tm
+
+target/
