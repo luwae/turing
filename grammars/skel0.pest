@@ -1,0 +1,48 @@
+/*
+Classic skeleton grammar.
+Call args are either:
+- a call
+- a symbol (immediate char or id)
+Ids representing chars are also caught in the calls; type analysis necessary.
+Again, not using a call at the end of a branch means staying in this state.
+*/
+
+id_start = { 'a'..'z' | 'A'..'Z' | "_" }
+id_continue = { id_start | '0'..'9' }
+id = @{ !(keyword_accept ~ !id_continue) ~
+        !(keyword_reject ~ !id_continue) ~
+        id_start ~ (id_continue)* }
+
+keyword_accept = { "accept" }
+keyword_reject = { "reject" }
+
+char = @{ "'" ~ char_inner ~ "'" }
+char_inner = @{ "x" ~ hexdigit ~ hexdigit | ascii_printable }
+hexdigit = { '0'..'9' | 'a'..'f' }
+
+statedesc = { id ~ params? ~ "{" ~ (branch_body | branch*) ~ "}" }
+params = { "(" ~ id ~ ("," ~ id)* ~ ")" }
+branch = { "[" ~ sel ~ "]" ~ branch_body }
+branch_body = { primitive* ~ call? }
+call = { id ~ call_args? | keyword_accept | keyword_reject }
+call_args = { "(" ~ call_arg ~ ("," ~ call_arg)* ~ ")" }
+call_arg = { call ~ &("," | ")") | char }
+primitive = { ">" | "<" | "#" ~ (char | id) }
+
+// precedence: or < and < not < range (use standard programming precedences)
+sel_elem = { id | char }
+
+sel = { sel_or | sel_p2 }
+sel_silent = _{ sel_or | sel_p2 }
+sel_or = { sel_p2 ~ ("|" ~ sel_p2)+ }
+sel_p2 = _{ sel_and | sel_p3 }
+sel_and = { sel_p3 ~ ("&" ~ sel_p3)+ }
+sel_p3 = _{ sel_not | sel_p4 }
+sel_not = { "!" ~ sel_p3? } // allow ! syntax as replacement for def keyword
+sel_p4 = _{ sel_range | sel_elem | "(" ~ sel_silent ~ ")" }
+sel_range = { sel_elem ~ ".." ~ sel_elem }
+
+machine = { SOI ~ statedesc* ~ EOI }
+
+ascii_printable = { '\u{20}'..'\u{7e}' }
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
