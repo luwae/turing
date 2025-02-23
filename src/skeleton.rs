@@ -63,8 +63,6 @@ pub enum Terminate {
 pub enum CallArg {
     Sel(Selector),
     Chain(Chain),
-    Sym(u8),
-    Id(String),
 }
 
 pub fn sym_parser() -> impl Parser<char, u8, Error = Simple<char>> + Clone {
@@ -90,15 +88,15 @@ pub fn selector_elem_parser() -> impl Parser<char, SelectorElem, Error = Simple<
         .padded()
 }
 
-pub fn primitive_parser() -> impl Parser<char, Primitive, Error = Simple<char>> {
+pub fn primitive_parser() -> impl Parser<char, Primitive, Error = Simple<char>> + Clone {
     just('<')
-        .map(|_| Primitive::Movel)
-        .or(just('>').map(|_| Primitive::Mover))
-        .or(selector_elem_parser().map(Primitive::Print))
+        .to(Primitive::Movel)
+        .or(just('>').to(Primitive::Mover))
+        .or(just('#').ignore_then(selector_elem_parser().map(Primitive::Print)))
         .padded()
 }
 
-pub fn selector_parser() -> impl Parser<char, Selector, Error = Simple<char>> {
+pub fn selector_parser() -> impl Parser<char, Selector, Error = Simple<char>> + Clone {
     recursive(|sel| {
         let elem = selector_elem_parser();
 
@@ -142,15 +140,35 @@ pub fn selector_parser() -> impl Parser<char, Selector, Error = Simple<char>> {
     })
 }
 
-/*
-pub fn chain_parser() -> impl Parser<char, Chain, Error = Simple<char>> {
+pub fn chain_parser() -> impl Parser<char, Chain, Error = Simple<char>> + Clone {
     recursive(|chain| {
-        let call = text::ident().padded().then(
-            text::ident()
-            .then(just(',').then(text::ident()).repeated().collect::<Vec<_>>())
+        let call_arg = selector_parser()
+            .map(CallArg::Sel)
+            .or(chain.map(CallArg::Chain)); // for now, this also catches sym and id.
+
+        let call_args = call_arg
+            .clone()
+            .then(just(',').padded().ignore_then(call_arg).repeated())
             .delimited_by(just('('), just(')'))
-            .or_not());
-        let chain_elem = primitive_parser().or(call)
+            .map(|(first, mut rest)| {
+                rest.insert(0, first);
+                rest
+            });
+
+        let call = text::ident().padded().then(call_args);
+
+        let chain_elem = primitive_parser()
+            .map(ChainElem::Prim)
+            .or(call.map(|(id, args)| ChainElem::Call { id, args }));
+
+        let term = text::keyword("accept")
+            .to(Terminate::Accept)
+            .or(text::keyword("reject").to(Terminate::Reject));
+
+        chain_elem
+            .padded()
+            .repeated()
+            .then(term.or_not())
+            .map(|(parts, term)| Chain { parts, term })
     })
 }
-*/

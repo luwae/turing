@@ -84,6 +84,6 @@ use chumsky::Parser;
 fn main() {
     let input = std::fs::read_to_string("test.stm").unwrap();
 
-    let res = skeleton::selector_parser().parse(input);
-    println!("{:?}", res);
+    let res = skeleton::chain_parser().parse(input);
+    println!("{:#?}", res);
 }
