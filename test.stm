@@ -1,1 +1,3 @@
-> f(< accept, !'x'&'a') reject
+main {
+ [!] > f(< accept, !'x'&'a') reject
+}

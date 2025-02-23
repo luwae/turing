@@ -4,7 +4,7 @@ use chumsky::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct Machine {
-    states: Vec<StateDef>,
+    pub states: Vec<StateDef>,
 }
 
 #[derive(Debug, Clone)]
@@ -179,4 +179,34 @@ pub fn chain_parser() -> impl Parser<char, Chain, Error = Simple<char>> + Clone 
             .then(term.or_not())
             .map(|(parts, term)| Chain { parts, term })
     })
+}
+
+pub fn machine_parser() -> impl Parser<char, Machine, Error = Simple<char>> + Clone {
+    let branch = selector_parser()
+        .delimited_by(just('['), just(']'))
+        .padded()
+        .then(chain_parser())
+        .map(|(sel, chain)| Branch { sel, chain })
+        .padded();
+
+    let state_params = text::ident()
+        .then(just(',').padded().ignore_then(text::ident()).repeated())
+        .map(|(first, mut rest)| {
+            rest.insert(0, first);
+            rest
+        });
+
+    let state_def = text::ident()
+        .padded()
+        .then(state_params.or_not().map(Option::unwrap_or_default))
+        .padded()
+        .then(branch.repeated().delimited_by(just('{'), just('}')))
+        .map(|((name, params), branches)| StateDef {
+            name,
+            params,
+            branches,
+        })
+        .padded();
+
+    state_def.repeated().map(|states| Machine { states })
 }
