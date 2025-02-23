@@ -163,7 +163,9 @@ pub fn chain_parser() -> impl Parser<char, Chain, Error = Simple<char>> + Clone 
                 rest
             });
 
-        let call = text::ident().padded().then(call_args);
+        let call = text::ident()
+            .padded()
+            .then(call_args.or_not().map(Option::unwrap_or_default));
 
         let chain_elem = primitive_parser()
             .map(ChainElem::Prim)
@@ -194,8 +196,10 @@ pub fn machine_parser() -> impl Parser<char, Machine, Error = Simple<char>> + Cl
         .map(|(first, mut rest)| {
             rest.insert(0, first);
             rest
-        });
+        })
+        .delimited_by(just('('), just(')'));
 
+    // TODO pass-through states; maybe transform to [!] branch internally
     let state_def = text::ident()
         .padded()
         .then(state_params.or_not().map(Option::unwrap_or_default))
@@ -208,5 +212,8 @@ pub fn machine_parser() -> impl Parser<char, Machine, Error = Simple<char>> + Cl
         })
         .padded();
 
-    state_def.repeated().map(|states| Machine { states })
+    state_def
+        .repeated()
+        .map(|states| Machine { states })
+        .then_ignore(end())
 }
