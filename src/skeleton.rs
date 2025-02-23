@@ -124,16 +124,24 @@ pub fn selector_parser() -> impl Parser<char, Selector, Error = Simple<char>> + 
             neg.clone()
                 .then(just('&').ignore_then(neg).repeated())
                 .map(|(first, mut rest)| {
-                    rest.insert(0, first);
-                    Selector::And(rest)
+                    if rest.is_empty() {
+                        first
+                    } else {
+                        rest.insert(0, first);
+                        Selector::And(rest)
+                    }
                 });
 
         let sor = sand
             .clone()
             .then(just('|').ignore_then(sand).repeated())
             .map(|(first, mut rest)| {
-                rest.insert(0, first);
-                Selector::Or(rest)
+                if rest.is_empty() {
+                    first
+                } else {
+                    rest.insert(0, first);
+                    Selector::Or(rest)
+                }
             });
 
         sor
