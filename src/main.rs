@@ -80,11 +80,10 @@ fn main_concrete() {
 
 mod skeleton;
 use chumsky::Parser;
-use skeleton::sym_parser;
 
 fn main() {
     let input = std::fs::read_to_string("test.stm").unwrap();
 
-    let res = sym_parser().parse(input);
+    let res = skeleton::selector_parser().parse(input);
     println!("{:?}", res);
 }

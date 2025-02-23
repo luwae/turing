@@ -24,7 +24,7 @@ pub struct Branch {
 pub enum Selector {
     Or(Vec<Selector>),
     And(Vec<Selector>),
-    Not(Box<Option<Selector>>),
+    Not(Option<Box<Selector>>),
     Range(SelectorElem, SelectorElem),
     Elem(SelectorElem),
 }
@@ -67,7 +67,7 @@ pub enum CallArg {
     Id(String),
 }
 
-pub fn sym_parser() -> impl Parser<char, u8, Error = Simple<char>> {
+pub fn sym_parser() -> impl Parser<char, u8, Error = Simple<char>> + Clone {
     let hexdigit = filter(|c: &char| c.is_ascii_hexdigit());
     let hexsym = just('x')
         .ignored()
@@ -82,7 +82,7 @@ pub fn sym_parser() -> impl Parser<char, u8, Error = Simple<char>> {
     hexsym.or(normal_sym).padded()
 }
 
-pub fn selector_elem_parser() -> impl Parser<char, SelectorElem, Error = Simple<char>> {
+pub fn selector_elem_parser() -> impl Parser<char, SelectorElem, Error = Simple<char>> + Clone {
     use SelectorElem as SE;
     sym_parser()
         .map(SE::Sym)
@@ -100,26 +100,49 @@ pub fn primitive_parser() -> impl Parser<char, Primitive, Error = Simple<char>> 
 
 pub fn selector_parser() -> impl Parser<char, Selector, Error = Simple<char>> {
     recursive(|sel| {
-        let elem = selector_elem_parser().or(sel.delimited_by(just('('), just(')')));
+        let elem = selector_elem_parser();
 
         // sort by decreasing precedence:
-        let range = elem.clone().then(just('.')).then(just('.')).then(elem);
+        let range = elem
+            .clone()
+            .then_ignore(just('.'))
+            .then_ignore(just('.'))
+            .then(elem.clone())
+            .map(|(lo, hi)| Selector::Range(lo, hi));
 
-        let neg = just('!').repeated().then(range.or_not())
-            .foldr(todo!());
+        let base = range
+            .or(elem.map(Selector::Elem))
+            .or(sel.delimited_by(just('('), just(')')));
 
-        let and = neg.clone()
-            .then(just('&').then(neg).repeated())
-            .foldl(todo!());
+        let neg = just('!')
+            .repeated()
+            .at_least(1)
+            .then(base.clone().or_not())
+            .foldr(|_op, rhs| Some(Selector::Not(rhs.map(Box::new))))
+            .map(Option::unwrap)
+            .or(base);
 
-        let or = and.clone()
-            .then(just('|').then(and).repeated())
-            .foldl(todo!());
+        let sand =
+            neg.clone()
+                .then(just('&').ignore_then(neg).repeated())
+                .map(|(first, mut rest)| {
+                    rest.insert(0, first);
+                    Selector::And(rest)
+                });
 
-        or
+        let sor = sand
+            .clone()
+            .then(just('|').ignore_then(sand).repeated())
+            .map(|(first, mut rest)| {
+                rest.insert(0, first);
+                Selector::Or(rest)
+            });
+
+        sor
     })
 }
 
+/*
 pub fn chain_parser() -> impl Parser<char, Chain, Error = Simple<char>> {
     recursive(|chain| {
         let call = text::ident().padded().then(
@@ -130,3 +153,4 @@ pub fn chain_parser() -> impl Parser<char, Chain, Error = Simple<char>> {
         let chain_elem = primitive_parser().or(call)
     })
 }
+*/
