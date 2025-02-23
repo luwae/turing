@@ -1,3 +1,4 @@
+/*
 mod tape;
 use tape::Tape;
 mod concrete;
@@ -75,8 +76,15 @@ fn main_concrete() {
         Err(e) => println!("{}", e),
     }
 }
+*/
+
+mod skeleton;
+use chumsky::Parser;
+use skeleton::sym_parser;
 
 fn main() {
-    let input = std::fs::read_to_string("machine.atm").unwrap();
-    parse_skeleton::parse_skeleton(&input);
+    let input = std::fs::read_to_string("test.stm").unwrap();
+
+    let res = sym_parser().parse(input);
+    println!("{:?}", res);
 }

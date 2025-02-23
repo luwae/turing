@@ -6,10 +6,11 @@ statedesc = { id ~ "{" ~ branch* ~ "}" }
 branch = { selector ~ action* ~ id? }
 selector = { "[" ~ char ~ ("," ~ char)* ~ "]" | "[def]" }
 char = @{ "'" ~ char_inner ~ "'" }
-char_inner = @{ "x" ~ hexdigit ~ hexdigit | "0" | "1" | "_" }
+char_inner = @{ "x" ~ hexdigit ~ hexdigit | ascii_printable }
 hexdigit = { '0'..'9' | 'a'..'f' }
-action = { "<" | ">" | "=" ~ char }
+action = { "<" | ">" | "#" ~ char }
 
 file = { SOI ~ statedesc* ~ EOI }
 
+ascii_printable = { '\u{20}'..'\u{7e}' }
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }

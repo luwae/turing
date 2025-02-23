@@ -1,4 +1,11 @@
 // allow chains as state arguments. They are transformed like before.
+// example:
+// main {
+//   [def] s1 > s2(s3 > s4 accept)
+// }
+// s2(E) {
+//   [def] > > E > >
+// }
 
 id_start = { 'a'..'z' | 'A'..'Z' | "_" }
 id_continue = { id_start | '0'..'9' }

@@ -12,6 +12,9 @@
 
 // fixed issue where call_chain could be empty.
 
+// char can be cast to selector
+// id can be cast to call or selector
+
 id_start = { 'a'..'z' | 'A'..'Z' | "_" }
 id_continue = { id_start | '0'..'9' }
 id = @{ !(keyword_accept ~ !id_continue) ~
@@ -31,12 +34,12 @@ params = { "(" ~ id ~ ("," ~ id)* ~ ")" }
 branch = { "[" ~ sel ~ "]" ~ call_chain }
 call_chain = { (keyword_accept | keyword_reject)
     | (primitive | call)+ ~ (keyword_accept | keyword_reject)? }
-call = { id ~ call_tail? }
-call_noid = { id ~ call_tail } 
-call_tail = { "(" ~ call_arg ~ ("," ~ call_arg)* ~ ")" }
+call = { id ~ call_args? }
+call_noid = { id ~ call_args } 
+call_args = { "(" ~ call_arg ~ ("," ~ call_arg)* ~ ")" }
 call_arg =  {
-      !((id | char) ~ ("," | ")")) ~ sel ~ &("," | ")")
-    | !(id ~ ("," | ")")) ~ call_chain ~ &("," | ")")
+      !((id | char) ~ ("," | ")")) ~ sel ~ &("," | ")") // all selectors that are not a simple char or id
+    | !(id ~ ("," | ")")) ~ call_chain ~ &("," | ")") // all call chains that are not a simple id
     | char
     | id
 }
@@ -50,7 +53,7 @@ sel_p2 = _{ sel_and | sel_p3 }
 sel_and = { sel_p3 ~ ("&" ~ sel_p3)+ }
 sel_p3 = _{ sel_not | sel_p4 }
 sel_not = { "!" ~ sel_p3? } // allow ! syntax as replacement for def keyword
-sel_p4 = _{ sel_range | (id | char) | "(" ~ sel_silent ~ ")" }
+sel_p4 = _{ sel_range | char | id | "(" ~ sel_silent ~ ")" }
 sel_range = { (id | char) ~ (".." ~ (id | char)) }
 
 file = { SOI ~ statedef* ~ EOI }
