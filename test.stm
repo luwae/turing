@@ -4,5 +4,5 @@ find(sel, move, E) {
 }
 
 main {
-  [!] find('a'|'b'&'c', > >) #'H'
+  find('a'|'b'&'c', > >) #'H'
 }

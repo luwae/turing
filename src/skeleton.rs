@@ -4,11 +4,11 @@ use chumsky::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct Machine {
-    pub states: Vec<StateDef>,
+    pub states: Vec<StateDesc>,
 }
 
 #[derive(Debug, Clone)]
-pub struct StateDef {
+pub struct StateDesc {
     pub name: String,
     pub params: Vec<String>,
     pub branches: Vec<Branch>,
@@ -28,6 +28,7 @@ pub enum Selector {
     Range(SelectorElem, SelectorElem),
     Elem(SelectorElem),
 }
+
 #[derive(Debug, Clone)]
 pub enum SelectorElem {
     Sym(u8),
@@ -144,7 +145,7 @@ pub fn selector_parser() -> impl Parser<char, Selector, Error = Simple<char>> + 
                 }
             });
 
-        sor
+        sor.padded()
     })
 }
 
@@ -204,8 +205,18 @@ pub fn machine_parser() -> impl Parser<char, Machine, Error = Simple<char>> + Cl
         .padded()
         .then(state_params.or_not().map(Option::unwrap_or_default))
         .padded()
-        .then(branch.repeated().delimited_by(just('{'), just('}')))
-        .map(|((name, params), branches)| StateDef {
+        .then(
+            chain_parser()
+                .map(|chain| {
+                    vec![Branch {
+                        sel: Selector::Not(None),
+                        chain,
+                    }]
+                })
+                .delimited_by(just('{'), just('}'))
+                .or(branch.repeated().delimited_by(just('{'), just('}'))),
+        )
+        .map(|((name, params), branches)| StateDesc {
             name,
             params,
             branches,
