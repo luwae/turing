@@ -37,7 +37,7 @@ A _selector_ is an unordered set of symbols.
 
 A branch is "taken" (its operations executed and the machine transitioned to its continuation state) when its selector contains the symbol that is on the scanned square.
 
-Consider the following machine working on $S = {a, b, c, d, \_}$. The machine moves to the right, deleting every $a$ it encounters, leaving other symbols unmodified.
+Consider the following machine working on the letters $a, b, c, d$. The machine moves to the right, deleting every $a$ it encounters, leaving other symbols unmodified.
 The machine can be defined with a single state $f$:
 
 | state | symbol | operations | continuation state |
@@ -66,7 +66,7 @@ We will lift this restriction now by ordering the branches. Reading from top to 
 
 This convention of having a catch-all branch as the last branch is so common that we have a special name for it: the _default branch_. If a default branch is defined, the `reject` substitution from above is unnecessary.
 
-One may think that the way we wrote this implies that we already have to know $S$ here, which is false: S is only used as a symbolic value in the table. Even if we change the underlying $S$ after having defined this machine it still works, and now the default branch correctly catches a different set of symbols (everything except $a$).
+One may think that the way we wrote this implies that we already have to know $S$ here, which is false: $S$ is only used as a symbolic value in the table. Even if we change the underlying $S$ after having defined this machine it still works, and now the default branch correctly catches a different set of symbols (everything except $a$).
 This is usually the preferred way of handling unknown symbols.
 
 Branch ordering is also useful in combination with another optimization: symbol ranges.
@@ -101,7 +101,7 @@ The breaks in the decimal digit range are ugly. With ordered selectors we can us
 | f     | 0..=9   | R          | f                  |
 | f     | S       | Px, R      | f                  |
 
-Note that this presupposes a notion of ordered symbols, which doesn't exist in general. However, we work with bytes/ASCII symbols as $S$, which are ordered.
+Note that this presupposes a notion of sequential symbols, which doesn't exist in general. However, we work with bytes/ASCII symbols as $S$, which are sequential.
 
 #### Refining Selectors
 By now we can specify selectors as a set of single symbols or ranges, or catch-all $S$. We can extend this by thinking about unions, intersections, and complements.
