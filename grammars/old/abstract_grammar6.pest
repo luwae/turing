@@ -54,7 +54,7 @@ sel_and = { sel_p3 ~ ("&" ~ sel_p3)+ }
 sel_p3 = _{ sel_not | sel_p4 }
 sel_not = { "!" ~ sel_p3? } // allow ! syntax as replacement for def keyword
 sel_p4 = _{ sel_range | char | id | "(" ~ sel_silent ~ ")" }
-sel_range = { (id | char) ~ (".." ~ (id | char)) }
+sel_range = { (id | char) ~ ("..=" ~ (id | char)) }
 
 file = { SOI ~ statedef* ~ EOI }
 
