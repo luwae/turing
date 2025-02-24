@@ -325,7 +325,7 @@ The end of an underspecified chain, if there is nothing following it, is always 
 
 ## Outlook
 
-There are a few features which would be nice to have.
+There are a few features which would be nice to have. Some of them may not make sense on closer inspection; these are loose ideas.
 
 ### Current Symbol Operator
 
@@ -388,6 +388,17 @@ incr(a) = match a {
 }
 ```
 
+### Language Consistency
+
+There are no states, only chains and matches. E.g. a state would be written as:
+
+```
+a = match $ {
+  [...] (some chain)
+  [...] (some other chain)
+}
+```
+
 ### Let bindings
 
 Sometimes, expressions are reused. It would be convenient to not be forced to repeat them.
@@ -400,3 +411,69 @@ main { fr(hexdigit, fr(hexdigit, accept)) }
 ```
 
 We could also introduce scoping to allow let inside a state, for example.
+
+### Anonymous states and nested states
+
+```
+rfr(sel, E) {
+  > fr(sel, E)
+}
+```
+
+```
+rfr(sel, E) {
+  > {
+    [sel] E
+    [!] >
+  }
+}
+```
+
+We probably get problems with the concept of "current state" here. How to refer to the outer one? Does that even make sense?
+ 
+
+### States with Return Values
+
+Imagine we want to use the symbol to the right of us. We could write something like the following:
+
+```
+get_right(E) {
+  >
+  let s = get_current
+  <
+  return s
+}
+
+get_current(E) {
+  return $
+}
+
+main { #@print_right E }
+```
+
+A state can carry a value (in this case a symbol), which is then printed.
+
+This only works if we have a finite amount of symbols (I think), and even then it will lead to a state explosion.
+
+The binding here is also difficult: it's not `#(@(print_right ~ E))`, it is `(#(@print_right)) ~ E`
+
+Can this even be resolved like usual?
+
+## Open Concerns
+- always have an implicit continuation state which does not have to be part of the parameter list; accessible with CONTINUE keyword?
+- y (y) problem
+- problem with unspecified tail chains?
+- arguments to parameter states? `state(E) { E('a', accept) }`. Does this make sense? Is this similar to chains?
+  - in general, inserting the state we get into someting vs. inserting something inside that state
+  - what if there are arguments to a state that already got arguments? Arguments `E(r)` are different than chaining `E >`! At least when there is more than one argument being passed
+```
+s(A, B) { A #'x' B }
+t(E) {
+  [0] E(>>, <<)
+  [1] E(<<, >>)
+}
+
+main { t(s) }
+```
+
+- restrict language in such a way that we can always tell whether a resolve terminates, without having to execute it?
