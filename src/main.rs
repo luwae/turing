@@ -78,12 +78,13 @@ fn main_concrete() {
 }
 */
 
+mod parse;
 mod skeleton;
 use chumsky::Parser;
 
 fn main() {
-    let input = std::fs::read_to_string("test.stm").unwrap();
+    let input = std::fs::read_to_string("machines/add-one.tm").unwrap();
 
-    let res = skeleton::machine_parser().parse(input);
+    let res = parse::concrete::machine_parser().parse(input);
     println!("{:#?}", res);
 }

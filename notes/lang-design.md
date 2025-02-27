@@ -477,3 +477,8 @@ main { t(s) }
 ```
 
 - restrict language in such a way that we can always tell whether a resolve terminates, without having to execute it?
+- empty chains allowed? On grammar level and/or on semantic level?
+- problem: addressing state (e.g. have state `r(sel, E)` that we want to pass itself as E; does this even make sense?)
+- consistency with chaining and adding arguments; leave other than last argument free?
+  - better typing; "partial applications", "not applied" (actually should we be able to mention un-applied states? Or are chains only an exception here?) -> new terminology?
+  - can't we already do that by just defining a pass-through state -> yes, but only static; for dynamic we need nested states
