@@ -30,7 +30,7 @@ use chumsky::Parser;
 use exec::{AsciiPresent, Execution, Present, StepEvent};
 
 fn main() {
-    let input = std::fs::read_to_string("machines/add-one.tm").unwrap();
+    let input = std::fs::read_to_string("machines/test-move-left.tm").unwrap();
 
     let res = match parse::concrete::machine_parser().parse(input) {
         Ok(r) => r,

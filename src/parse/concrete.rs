@@ -215,10 +215,10 @@ pub fn machine_parser() -> impl Parser<char, Machine, Error = Simple<char>> + Cl
 }
 
 impl SymMap {
-    fn apply(&self, sym: u8, machine: &Machine) -> u8 {
+    fn apply(&self, sym: u8, machine: &Machine, context: Option<u8>) -> u8 {
         for branch in &self.branches {
-            if branch.0.matches(sym, machine, sym) {
-                return branch.1.real(machine, sym);
+            if branch.0.matches(sym, machine, context) {
+                return branch.1.real(machine, context);
             }
         }
         panic!("sym {} not found in map {}", sym, self.name);
@@ -226,14 +226,14 @@ impl SymMap {
 }
 
 impl Sym {
-    fn real(&self, machine: &Machine, context: u8) -> u8 {
+    fn real(&self, machine: &Machine, context: Option<u8>) -> u8 {
         match self {
             Self::Imm(i) => *i,
-            Self::Context => context,
+            Self::Context => context.expect("no context for symbol"),
             Self::Mapped(name, sym) => {
                 let real_sym = sym.real(machine, context);
                 match machine.map_by_name(name) {
-                    Some(map) => map.apply(real_sym, machine),
+                    Some(map) => map.apply(real_sym, machine, context),
                     None => panic!("no map named {}", name),
                 }
             }
@@ -242,7 +242,7 @@ impl Sym {
 }
 
 impl Selector {
-    fn matches(&self, sym: u8, machine: &Machine, context: u8) -> bool {
+    fn matches(&self, sym: u8, machine: &Machine, context: Option<u8>) -> bool {
         match self {
             Self::Or(ss) => ss.iter().any(|sel| sel.matches(sym, machine, context)),
             Self::And(ss) => ss.iter().all(|sel| sel.matches(sym, machine, context)),
@@ -255,21 +255,16 @@ impl Selector {
                 let real_b = b.real(machine, context);
                 sym >= real_a && sym <= real_b
             }
-            Self::Elem(s) => {
-                if let Sym::Context = s {
-                    panic!("selector contains context");
-                }
-                s.real(machine, context) == sym
-            }
+            Self::Elem(s) => s.real(machine, context) == sym,
         }
     }
 }
 
 impl StateDesc {
-    fn matching_branch(&self, sym: u8, machine: &Machine, context: u8) -> Option<&Branch> {
+    fn matching_branch(&self, sym: u8, machine: &Machine) -> Option<&Branch> {
         self.branches
             .iter()
-            .find(|b| b.sel.matches(sym, machine, context))
+            .find(|b| b.sel.matches(sym, machine, None))
     }
 }
 
@@ -312,11 +307,11 @@ impl exec::Machine for Machine {
         sym: u8,
     ) -> Option<impl Iterator<Item = exec::Primitive>> {
         if let Some(s) = self.state_by_idx(state_idx) {
-            s.matching_branch(sym, self, sym).map(|b| {
+            s.matching_branch(sym, self).map(|b| {
                 b.prim.iter().map(move |p| match p {
                     Primitive::Movel => exec::Primitive::Movel,
                     Primitive::Mover => exec::Primitive::Mover,
-                    Primitive::Print(s) => exec::Primitive::Print(s.real(self, sym)),
+                    Primitive::Print(s) => exec::Primitive::Print(s.real(self, Some(sym))),
                 })
             })
         } else {
@@ -326,7 +321,7 @@ impl exec::Machine for Machine {
 
     fn continuation(&self, state_idx: usize, sym: u8) -> exec::Continuation {
         if let Some(s) = self.state_by_idx(state_idx) {
-            if let Some(b) = s.matching_branch(sym, self, sym) {
+            if let Some(b) = s.matching_branch(sym, self) {
                 match &b.cont {
                     Some(Continuation::Accept) => exec::Continuation::Accept,
                     Some(Continuation::Reject) => exec::Continuation::Reject,
