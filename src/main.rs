@@ -30,13 +30,13 @@ use chumsky::Parser;
 use exec::{AsciiPresent, Execution, Present, StepEvent};
 
 fn main() {
-    let input = std::fs::read_to_string("machines/mapped.tm").unwrap();
+    let input = std::fs::read_to_string("machines/add-one.tm").unwrap();
 
     let res = match parse::concrete::machine_parser().parse(input) {
         Ok(r) => r,
         Err(e) => panic!("{:#?}", e),
     };
-    let mut ex = Execution::new(&res);
+    let mut ex = Execution::with_tape_content(&res, "10011");
 
     let pres = AsciiPresent;
     pres.present(&ex);
@@ -54,7 +54,7 @@ fn main() {
             }
             StepEvent::Continue => {
                 pres.present(&ex);
-                println!("continue!");
+                println!();
             }
         }
     }

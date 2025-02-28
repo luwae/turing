@@ -174,22 +174,22 @@ impl<'a, M: Machine> Present<'a, M> for AsciiPresent {
             )
         };
         let (center_off, len) = (-bounds.0, -bounds.0 + bounds.1 + 1);
-        // first row shows state name
-        // TODO
 
-        // second row shows current position
-        for i in 0..len {
-            print!("{}", if i == center_off + ex.pos { 'V' } else { ' ' });
+        // position and state name
+        let real_pos = center_off + ex.pos;
+        for _ in 0..real_pos {
+            print!(" ");
         }
+        print!("V - {}", ex.machine.state_name(ex.state_idx));
         println!();
 
-        // third row shows center
+        // center
         for i in 0..len {
             print!("{}", if i == center_off { '|' } else { ' ' });
         }
         println!();
 
-        // next row shows tape
+        // tape
         for i in 0..len {
             let s = match ex.tape.get(i - center_off) {
                 printable if (b' '..=b'~').contains(&printable) && printable != b'_' => {
