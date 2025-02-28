@@ -1,5 +1,5 @@
 main {
-	#incr(incr('0')) > #incr2('0')
+	#incr(incr('0')) > #incr2('0') accept
 }
 
 map incr {
@@ -8,6 +8,6 @@ map incr {
 	['2'] '3'
 }
 
-map plus2 {
+map incr2 {
 	[!] incr(incr($))
 }

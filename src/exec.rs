@@ -98,7 +98,7 @@ pub enum StepEvent {
 }
 
 impl<'a, M: Machine> Execution<'a, M> {
-    fn new(machine: &'a M) -> Self {
+    pub fn new(machine: &'a M) -> Self {
         Self {
             machine,
             state_idx: 0,
@@ -107,7 +107,7 @@ impl<'a, M: Machine> Execution<'a, M> {
         }
     }
 
-    fn with_tape_content(machine: &'a M, tape_content: &str) -> Self {
+    pub fn with_tape_content(machine: &'a M, tape_content: &str) -> Self {
         Self {
             machine,
             state_idx: 0,
@@ -116,7 +116,11 @@ impl<'a, M: Machine> Execution<'a, M> {
         }
     }
 
-    fn step(&mut self) -> StepEvent {
+    pub fn tape_get(&self, idx: i32) -> u8 {
+        self.tape.get(idx)
+    }
+
+    pub fn step(&mut self) -> StepEvent {
         let scan = self.tape.get(self.pos);
 
         if let Some(it) = self.machine.primitives(self.state_idx, scan) {

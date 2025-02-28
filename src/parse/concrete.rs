@@ -215,10 +215,10 @@ pub fn machine_parser() -> impl Parser<char, Machine, Error = Simple<char>> + Cl
 }
 
 impl SymMap {
-    fn apply(&self, sym: u8, machine: &Machine, context: u8) -> u8 {
+    fn apply(&self, sym: u8, machine: &Machine) -> u8 {
         for branch in &self.branches {
-            if branch.0.matches(sym, machine, context) {
-                return branch.1.real(machine, context);
+            if branch.0.matches(sym, machine, sym) {
+                return branch.1.real(machine, sym);
             }
         }
         panic!("sym {} not found in map {}", sym, self.name);
@@ -233,7 +233,7 @@ impl Sym {
             Self::Mapped(name, sym) => {
                 let real_sym = sym.real(machine, context);
                 match machine.map_by_name(name) {
-                    Some(map) => map.apply(real_sym, machine, context),
+                    Some(map) => map.apply(real_sym, machine),
                     None => panic!("no map named {}", name),
                 }
             }
