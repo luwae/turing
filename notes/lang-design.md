@@ -126,6 +126,82 @@ In the following we also don't use $S$ to denote the default branch, rather we w
 
 Creating an empty selector by specifying nothing is not possible. If you ever want to use an empty selector for whatever reason, use `!!`.
 
+#### Context
+There is a problem that arises with this kind of grouping. Inside a branch, as soon as its selector covers more than one symbol we don't know anymore which symbol was scanned on the tape.
+
+Imagine you want to write a symbol duplicator state:
+
+```
+dup {
+  ['a'] > #'a'
+  ['b'] > #'b'
+  ['c'] > #'c'
+  ...
+}
+```
+
+We cannot create a single branch out of these three branches because they are different, even though the structure is the same.
+
+We solve this by introducing the symbol _context_ `$`:
+
+```
+dup {
+  [!] > #$
+}
+```
+
+##### Details
+- a branch selector cannot contain the context `$`, because at this point we haven't scanned the context yet.
+
+#### Maps
+Now imagine you don't want to duplicate, but increment.
+
+```
+dup {
+  ['0'] > #'1'
+  ['1'] > #'2'
+  ['2'] > #'3'
+  ...
+}
+```
+
+Even though we have the context `$`, we cannot combine these three branches into one, because we don't use the context directly.
+
+For this reason we introduce _maps_ which can map a symbol to another symbol. We also call the "arms" of a map _branches_. They consist of a _selector_ and a symbol value.
+
+In our case:
+
+```
+map incr {
+  ['0'] '1'
+  ['1'] '2'
+  ['2'] '3'
+  ...
+}
+
+dup {
+  ['0'..='9'] > #incr($)
+}
+```
+
+We often want to talk about something "symbol-valued". We define `Sym` (capitalized) to be exactly this: either
+- a direct value (byte/ASCII/`u8`), or
+- the context `$`, or
+- a mapping of another `Sym`.
+
+Selectors now are defined as unions, intersections, complements, or ranges of `Sym`.
+
+Note that the way we currently use selectors (either in state branches or in map branches), they are not allowed to contain context `$` because we only get the context after having evaluated a branch.
+We still keep this in the definition of selectors though, because later we may want to use selectors in other places.
+
+##### Details
+- Maps can be applied to any `Sym`. You may use `incr(incr($))`, for example.
+- Map branches can contain arbitrary selectors, like state branches.
+- The "value" of a branch can be an arbitrary `Sym`. It can also include context, which will be the symbol passed into the map. An identity map would look like `map id { $ }`, for example.
+- As seen above, maps also support implicit default branches
+- Maps must contain a matching selector for the symbols they are called on. If a map is called with a symbol but there is no matching branch, this specification cannot be translated to a valid turing machine. Note that this is different for states where we have implicit rejects.
+- Maps can use themselves.
+
 ## Skeleton Turing Machines
 
 Given here is the origninal _skeleton table_ definition by Turing, for completeness. This uses our custom terminology.
@@ -326,67 +402,6 @@ The end of an underspecified chain, if there is nothing following it, is always 
 ## Outlook
 
 There are a few features which would be nice to have. Some of them may not make sense on closer inspection; these are loose ideas.
-
-### Current Symbol Operator
-
-Imagine you want to write a symbol duplicator state:
-
-```
-dup {
-  ['a'] > #'a'
-  ['b'] > #'b'
-  ['c'] > #'c'
-  ...
-}
-```
-
-We cannot create a single branch out of these three branches because they are different, even though the structure is the same.
-
-This would work if we introduced a "current symbol" operator (`$` in the following):
-
-```
-dup {
-  [!] > #$
-}
-```
-
-### Static Map
-
-Imagine you commonly use a substitution, like `o` for `0` and `i` for `1`. If you want to search for the substitution based on what's on tape, you would have to do:
-
-```
-s {
-  ['0'] fr('o', ...)
-  ['1'] fr('i', ...)
-}
-```
-
-We could simplify this by introducing a mapping feature:
-
-```
-subst(a) = match a {
-  ['0'] 'o'
-  ['1'] 'i'
-}
-
-s {
-  ['0'|'1'] fr(subst($), ...)
-}
-```
-
-This also needs the "current symbol" operator from above.
-
-We can do fancy stuff with this like increment a digit:
-
-```
-incr(a) = match a {
-  ['0'] '1'
-  ['1'] '2'
-  ...
-  ['8'] '9'
-  ['9'] '0'
-}
-```
 
 ### Language Consistency
 
