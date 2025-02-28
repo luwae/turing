@@ -346,4 +346,12 @@ impl exec::Machine for Machine {
             panic!("invalid state index {}", state_idx);
         }
     }
+
+    fn state_name(&self, state_idx: usize) -> &str {
+        if let Some(s) = self.state_by_idx(state_idx) {
+            &s.name
+        } else {
+            panic!("invalid state index {}", state_idx);
+        }
+    }
 }

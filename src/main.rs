@@ -27,7 +27,7 @@ mod exec;
 mod parse;
 mod skeleton;
 use chumsky::Parser;
-use exec::{Execution, StepEvent};
+use exec::{AsciiPresent, Execution, Present, StepEvent};
 
 fn main() {
     let input = std::fs::read_to_string("machines/mapped.tm").unwrap();
@@ -38,20 +38,24 @@ fn main() {
     };
     let mut ex = Execution::new(&res);
 
+    let pres = AsciiPresent;
+    pres.present(&ex);
     loop {
         match ex.step() {
             StepEvent::Accept => {
+                pres.present(&ex);
                 println!("accept!");
                 break;
             }
             StepEvent::Reject => {
+                pres.present(&ex);
                 println!("reject!");
                 break;
             }
             StepEvent::Continue => {
+                pres.present(&ex);
                 println!("continue!");
             }
         }
     }
-    println!("{} {} {}", ex.tape_get(0), ex.tape_get(1), ex.tape_get(2));
 }

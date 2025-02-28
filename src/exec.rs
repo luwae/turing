@@ -47,6 +47,13 @@ impl Tape {
         }
     }
 
+    fn bounds_inclusive(&self) -> (i32, i32) {
+        (
+            -TryInto::<i32>::try_into(self.left.len()).unwrap(),
+            TryInto::<i32>::try_into(self.right.len()).unwrap() - 1,
+        )
+    }
+
     fn set(&mut self, idx: i32, val: u8) {
         if idx >= 0 {
             let idx = idx as usize;
@@ -81,6 +88,7 @@ pub enum Continuation {
 pub trait Machine {
     fn primitives(&self, state_idx: usize, sym: u8) -> Option<impl Iterator<Item = Primitive>>;
     fn continuation(&self, state_idx: usize, sym: u8) -> Continuation;
+    fn state_name(&self, state_idx: usize) -> &str;
 }
 
 pub struct Execution<'a, M: Machine> {
@@ -147,5 +155,51 @@ impl<'a, M: Machine> Execution<'a, M> {
                 StepEvent::Continue
             }
         }
+    }
+}
+
+pub trait Present<'a, M: Machine> {
+    fn present(&self, ex: &Execution<'a, M>);
+}
+
+pub struct AsciiPresent;
+
+impl<'a, M: Machine> Present<'a, M> for AsciiPresent {
+    fn present(&self, ex: &Execution<'a, M>) {
+        let bounds = {
+            let tape_bounds = ex.tape.bounds_inclusive();
+            (
+                std::cmp::min(tape_bounds.0, ex.pos),
+                std::cmp::max(tape_bounds.1, ex.pos),
+            )
+        };
+        let (center_off, len) = (-bounds.0, -bounds.0 + bounds.1 + 1);
+        // first row shows state name
+        // TODO
+
+        // second row shows current position
+        for i in 0..len {
+            print!("{}", if i == center_off + ex.pos { 'V' } else { ' ' });
+        }
+        println!();
+
+        // third row shows center
+        for i in 0..len {
+            print!("{}", if i == center_off { '|' } else { ' ' });
+        }
+        println!();
+
+        // next row shows tape
+        for i in 0..len {
+            let s = match ex.tape.get(i - center_off) {
+                printable if (b' '..=b'~').contains(&printable) && printable != b'_' => {
+                    printable as char
+                }
+                0 => '_',
+                err => panic!("non-ascii-able u8: {}", err),
+            };
+            print!("{}", s);
+        }
+        println!();
     }
 }
