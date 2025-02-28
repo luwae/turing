@@ -1,59 +1,4 @@
 /*
-mod tape;
-use tape::Tape;
-mod concrete;
-use concrete::{Branch, Call, Machine, Primitive, Selector, State};
-mod parse_concrete;
-use parse_concrete::{parse_machine, ParseData};
-mod parse_skeleton;
-mod skeleton;
-
-struct Execution<'a> {
-    machine: &'a Machine,
-    state_idx: usize,
-    pos: i32,
-    tape: Tape,
-}
-
-enum StepEvent {
-    Continue,
-    Accept,
-    Reject,
-}
-
-impl<'a> Execution<'a> {
-    fn step(&mut self) -> StepEvent {
-        let scan = self.tape.get(self.pos);
-        let branch = self.machine.states[self.state_idx]
-            .branches
-            .iter()
-            .find(|branch| branch.sel.matches(scan))
-            .expect("no matching branch");
-
-        for primitive in branch.primitives.iter() {
-            match primitive {
-                Primitive::Movel => {
-                    self.pos -= 1;
-                }
-                Primitive::Mover => {
-                    self.pos += 1;
-                }
-                Primitive::Print(sym) => {
-                    self.tape.set(self.pos, *sym);
-                }
-            }
-        }
-        match branch.call {
-            Call::State(idx) => {
-                self.state_idx = idx;
-                StepEvent::Continue
-            }
-            Call::Accept => StepEvent::Accept,
-            Call::Reject => StepEvent::Reject,
-        }
-    }
-}
-
 fn main_concrete() {
     let input = std::fs::read_to_string("test_machine.tm").unwrap();
     match parse_machine(&input) {
@@ -78,12 +23,13 @@ fn main_concrete() {
 }
 */
 
+mod exec;
 mod parse;
 mod skeleton;
 use chumsky::Parser;
 
 fn main() {
-    let input = std::fs::read_to_string("machines/add-one.tm").unwrap();
+    let input = std::fs::read_to_string("machines/mapped.tm").unwrap();
 
     let res = parse::concrete::machine_parser().parse(input);
     println!("{:#?}", res);
